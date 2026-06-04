@@ -14,7 +14,7 @@
     <main>
       <h1>Kalotyp accessibility host</h1>
       <p>This page exists for the axe-core CI gate. It loads the same Kalotyp bundle Ghost loads, then exposes <code>window.openEditor()</code> so the spec can drive the editor through every plugin's panel and run axe-core on each surface.</p>
-      <button id="open">Open editor</button>
+      <button id="open" type="button">Open editor</button>
     </main>
     <script type="module">
       // Match the Ghost loader: dynamic import() of the UMD bundle. The

@@ -19,14 +19,6 @@
 import {
   type AnnotateState,
   type AnnotateTool,
-  type Point,
-  type Shape,
-  type SourceImage,
-  type Store,
-  TEXT_DEFAULT_FONT_SIZE,
-  type TextShape,
-  type Viewport,
-  type ViewportController,
   addShape,
   boundingBoxOf,
   computeViewport,
@@ -34,28 +26,36 @@ import {
   deleteShape,
   isKeyboardPlaceableKind,
   mintShapeId,
+  type Point,
   pickShape,
   pointDisplayToImage,
   replaceShape,
+  type Shape,
+  type SourceImage,
+  type Store,
   selectShape,
   setActiveTool,
   setStyle,
+  TEXT_DEFAULT_FONT_SIZE,
+  type TextShape,
   translateShape,
+  type Viewport,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
 import { buildCoordInputs } from './coord-inputs.js';
 import { type AnnotatePanel, buildAnnotatePanel } from './panel.js';
-import { type DragHandlers, attachPointerDrag, clientToElement } from './pointer-drag.js';
+import { attachPointerDrag, clientToElement, type DragHandlers } from './pointer-drag.js';
 import { paintImageLayer, paintLiveLayer, paintMarqueeLayer, paintShapesLayer } from './render.js';
 import { buildSelectionLayer, selectedShapeOf } from './selection.js';
 import { buildAnnotateStage } from './stage.js';
 import { buildTextEditor } from './text-editor.js';
 import {
-  type ToolGestureContext,
   startArrowGesture,
   startBodyMoveGesture,
   startEllipseGesture,
   startFreehandGesture,
   startRectGesture,
+  type ToolGestureContext,
 } from './tools.js';
 
 const STAGE_PADDING_PX = 32;
@@ -172,7 +172,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     host: stage.textOverlay,
     onInput: (text) => {
       const selected = selectedShapeOf(store.get());
-      if (!selected || selected.kind !== 'text') return;
+      if (selected?.kind !== 'text') return;
       store.update((current) => replaceShape(current, { ...selected, text }));
     },
     onCommit: () => {
@@ -575,12 +575,12 @@ function applyStrokeWidthToShape(shape: Shape, strokeWidth: number): Shape {
   }
 }
 
-function normaliseExtent(extent: {
+function normaliseExtent(extent: { x: number; y: number; width: number; height: number }): {
   x: number;
   y: number;
   width: number;
   height: number;
-}): { x: number; y: number; width: number; height: number } {
+} {
   let { x, y, width, height } = extent;
   if (width < 0) {
     x += width;

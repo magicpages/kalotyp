@@ -1,6 +1,6 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Page, devices, expect, test } from '@playwright/test';
+import { devices, expect, type Page, test } from '@playwright/test';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 

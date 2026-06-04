@@ -19,14 +19,14 @@ import {
   ALL_SELECTION_HANDLES,
   type AnnotateState,
   type ArrowShape,
-  type Rect,
-  type SelectionHandle,
-  type Shape,
-  type Viewport,
   boundingBoxOf,
+  type Rect,
   rectFromHandleDrag,
   replaceShape,
+  type SelectionHandle,
+  type Shape,
   selectionHandlePositions,
+  type Viewport,
 } from '@magicpages/kalotyp-core';
 import type { DragHandlers } from './pointer-drag.js';
 import { attachPointerDrag } from './pointer-drag.js';

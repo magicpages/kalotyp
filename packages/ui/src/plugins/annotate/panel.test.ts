@@ -93,21 +93,23 @@ describe('annotate panel — keyboard placement Insert button', () => {
     expect(panel.insertButton.disabled).toBe(true);
   });
 
-  it.each(['freehand', 'highlight'] as const)(
-    'disables the Insert button for %s (pointer-only tools)',
-    (tool) => {
-      const { panel } = build(tool);
-      expect(panel.insertButton.disabled).toBe(true);
-    },
-  );
+  it.each([
+    'freehand',
+    'highlight',
+  ] as const)('disables the Insert button for %s (pointer-only tools)', (tool) => {
+    const { panel } = build(tool);
+    expect(panel.insertButton.disabled).toBe(true);
+  });
 
-  it.each(['rect', 'ellipse', 'arrow', 'text'] as const)(
-    'enables Insert for the keyboard-placeable tool: %s',
-    (tool) => {
-      const { panel } = build(tool);
-      expect(panel.insertButton.disabled).toBe(false);
-    },
-  );
+  it.each([
+    'rect',
+    'ellipse',
+    'arrow',
+    'text',
+  ] as const)('enables Insert for the keyboard-placeable tool: %s', (tool) => {
+    const { panel } = build(tool);
+    expect(panel.insertButton.disabled).toBe(false);
+  });
 
   it('toggles Insert disabled state when setActiveTool changes', () => {
     const { panel } = build('select');

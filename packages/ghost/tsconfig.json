@@ -2,6 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
+    // Typecheck-only (emit is tsconfig.build.json). Wide rootDir admits the sibling source
+    // resolved via `paths`; noEmit keeps it inert.
+    "noEmit": true,
+    "rootDir": "../..",
     "types": ["vitest/globals"],
     "paths": {
       "@magicpages/kalotyp-core": ["../core/src/index.ts"],

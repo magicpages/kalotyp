@@ -1,9 +1,9 @@
 import {
+  bakeFrame,
   type FramePresetId,
   type FrameState,
-  type UtilityPlugin,
-  bakeFrame,
   initialFrameState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountFrameUtility } from './mount.js';
 

@@ -1,8 +1,8 @@
 import {
-  type ResizeState,
-  type UtilityPlugin,
   bakeResize,
   initialResizeState,
+  type ResizeState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountResizeUtility } from './mount.js';
 

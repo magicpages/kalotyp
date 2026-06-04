@@ -1,10 +1,10 @@
 import {
+  bakeCrop,
   type CropPreset,
   type CropPresetFilter,
   type CropState,
-  type UtilityPlugin,
-  bakeCrop,
   initialCropState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountCropUtility } from './mount.js';
 

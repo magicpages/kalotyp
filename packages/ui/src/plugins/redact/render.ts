@@ -19,10 +19,10 @@
  */
 
 import {
+  paintRedactRegion,
   type RedactRegion,
   type SourceImage,
   type Viewport,
-  paintRedactRegion,
 } from '@magicpages/kalotyp-core';
 
 /**

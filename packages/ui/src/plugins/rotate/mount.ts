@@ -1,19 +1,19 @@
 import {
+  computeViewport,
+  effectiveAngleDeg,
   FREE_ANGLE_MAX,
   FREE_ANGLE_MIN,
   FREE_ANGLE_STEP,
-  type RotateState,
-  type SourceImage,
-  type Store,
-  type ViewportController,
-  computeViewport,
-  effectiveAngleDeg,
   largestInscribedRect,
+  type RotateState,
   rotateClockwise,
   rotateCounterClockwise,
+  type SourceImage,
+  type Store,
   setFreeAngle,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
-import { STAGE_PADDING_PX, buildPreviewCanvas, paintPreview } from '../../canvas/preview-canvas.js';
+import { buildPreviewCanvas, paintPreview, STAGE_PADDING_PX } from '../../canvas/preview-canvas.js';
 
 export interface MountRotateOptions {
   readonly stageHost: HTMLElement;

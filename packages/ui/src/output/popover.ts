@@ -5,10 +5,10 @@
  */
 
 import {
+  canEncodeMime,
   type OutputMimeChoice,
   type OutputState,
   type Store,
-  canEncodeMime,
   setOutputMime,
   setOutputQuality,
   setStripMetadata,

@@ -1,6 +1,6 @@
 import type { Point } from '../../geometry/rect.js';
 import { boundingBoxOf } from './geometry.js';
-import { type Shape, assertNever } from './state.js';
+import { assertNever, type Shape } from './state.js';
 
 /** Picking margin added to every stroked-shape hit-test, in image-space pixels. */
 export const PICK_TOLERANCE = 4;

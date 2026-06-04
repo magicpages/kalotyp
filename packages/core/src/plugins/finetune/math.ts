@@ -167,9 +167,10 @@ export function boxBlur3x3(
   }
 }
 
-/** Structural raster shape so tests can pass a plain object (jsdom 25 lacks `ImageData`). */
+/** Structural raster shape so tests can pass a plain object (some jsdom versions lack `ImageData`). */
 export interface RasterImage {
-  readonly data: Uint8ClampedArray;
+  // ArrayBuffer-pinned so data is assignable to `new ImageData(...)`.
+  readonly data: Uint8ClampedArray<ArrayBuffer>;
   readonly width: number;
   readonly height: number;
 }

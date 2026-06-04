@@ -11,12 +11,12 @@ import {
   type Rect,
   type RedactRegion,
   type RedactState,
-  type SelectionHandle,
-  type Store,
-  type Viewport,
   rectFromHandleDrag,
   replaceRedactRegion,
+  type SelectionHandle,
+  type Store,
   selectedRedactRegionOf,
+  type Viewport,
 } from '@magicpages/kalotyp-core';
 import type { DragHandlers } from '../annotate/pointer-drag.js';
 import { attachPointerDrag } from '../annotate/pointer-drag.js';

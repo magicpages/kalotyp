@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MIN_SAMPLE_DISTANCE, decimatePoints, tracePath } from './smooth.js';
+import { decimatePoints, MIN_SAMPLE_DISTANCE, tracePath } from './smooth.js';
 
 describe('decimatePoints', () => {
   it('passes through empty input unchanged', () => {

@@ -1,4 +1,4 @@
-import { type ShellDom, buildShellDom } from './dom/build-shell-dom.js';
+import { buildShellDom, type ShellDom } from './dom/build-shell-dom.js';
 
 export interface ShellOptions {
   host: HTMLElement;

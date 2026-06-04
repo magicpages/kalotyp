@@ -19,19 +19,19 @@
 import {
   type AnnotateState,
   type ArrowShape,
+  addShape,
+  decimatePoints,
   type EllipseShape,
   type FreehandShape,
   HIGHLIGHT_DEFAULT_COLOR,
   HIGHLIGHT_DEFAULT_STROKE,
   type HighlightShape,
+  mintShapeId,
+  normaliseRectExtent,
   type Point,
   type RectShape,
   type Shape,
   type Store,
-  addShape,
-  decimatePoints,
-  mintShapeId,
-  normaliseRectExtent,
   selectShape,
 } from '@magicpages/kalotyp-core';
 import type { DragHandlers } from './pointer-drag.js';

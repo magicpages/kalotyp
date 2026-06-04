@@ -1,7 +1,7 @@
 import { createBakeCanvas, getBakeContext2D } from '../../canvas/bake-canvas.js';
 import type { SourceImage } from '../utility.js';
 import { tracePath } from './smooth.js';
-import { type Shape, assertNever } from './state.js';
+import { assertNever, type Shape } from './state.js';
 
 export interface AnnotateBakeInput {
   readonly shapes: ReadonlyArray<Shape>;

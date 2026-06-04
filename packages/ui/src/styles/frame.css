@@ -70,7 +70,6 @@
 }
 
 .kalotyp-frame-thumb-image {
-  display: block;
   position: relative;
   border: 2px solid var(--kalotyp-border);
   border-radius: var(--kalotyp-radius);

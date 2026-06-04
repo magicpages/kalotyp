@@ -1,8 +1,8 @@
 import {
   type CropPreset,
-  type Rect,
   createStore,
   initialCropState,
+  type Rect,
 } from '@magicpages/kalotyp-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mountCropUtility } from './mount.js';

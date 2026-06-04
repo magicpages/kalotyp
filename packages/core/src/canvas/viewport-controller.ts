@@ -1,10 +1,10 @@
 import type { Point, Size } from '../geometry/rect.js';
 import {
+  computeViewport,
   IDENTITY_VIEWPORT_TRANSFORM,
   type StageDimensions,
   type Viewport,
   type ViewportTransform,
-  computeViewport,
 } from './viewport.js';
 
 export const MAX_ZOOM = 8;

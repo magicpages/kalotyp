@@ -23,7 +23,11 @@
   font-weight: 500;
   cursor: pointer;
   /* font-weight excluded so the active-tab boldness snaps; other props ease. */
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .kalotyp-util-nav-button:hover {
@@ -172,10 +176,14 @@
   cursor: ew-resize;
 }
 .kalotyp-rotate-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+  box-shadow:
+    0 0 0 2px rgb(var(--color-background)),
+    0 0 0 5px rgb(var(--color-foreground));
 }
 .kalotyp-rotate-slider:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+  box-shadow:
+    0 0 0 2px rgb(var(--color-background)),
+    0 0 0 5px rgb(var(--color-foreground));
 }
 
 .kalotyp-rotate-input {

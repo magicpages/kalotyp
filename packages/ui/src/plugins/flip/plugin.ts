@@ -1,8 +1,8 @@
 import {
-  type FlipState,
-  type UtilityPlugin,
   bakeFlip,
+  type FlipState,
   initialFlipState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountFlipUtility } from './mount.js';
 

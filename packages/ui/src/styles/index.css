@@ -1,0 +1,12 @@
+@import "./base.css";
+@import "./crop.css";
+@import "./transform.css";
+@import "./annotate.css";
+@import "./finetune.css";
+@import "./filter.css";
+@import "./redact.css";
+@import "./frame.css";
+@import "./output.css";
+@import "./preferences.css";
+@import "./cheatsheet.css";
+@import "./mobile.css";

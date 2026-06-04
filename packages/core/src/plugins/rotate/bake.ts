@@ -1,7 +1,7 @@
 import { createBakeCanvas, getBakeContext2D } from '../../canvas/bake-canvas.js';
 import type { SourceImage } from '../utility.js';
 import { largestInscribedRect } from './inscribe.js';
-import { type RotateState, effectiveAngleDeg, isRotateNoOp } from './state.js';
+import { effectiveAngleDeg, isRotateNoOp, type RotateState } from './state.js';
 
 /**
  * Apply rotation = quarter-turns + free-angle in one `drawImage`. Free

@@ -1,6 +1,6 @@
 import { type BakeCanvas, createBakeCanvas, getBakeContext2D } from '../../canvas/bake-canvas.js';
 import type { SourceImage } from '../utility.js';
-import { type ResizeState, isResizeNoOp, resolveOutputSize } from './state.js';
+import { isResizeNoOp, type ResizeState, resolveOutputSize } from './state.js';
 
 /**
  * Resize `source` to the dimensions implied by `state`. Downscales > 2×

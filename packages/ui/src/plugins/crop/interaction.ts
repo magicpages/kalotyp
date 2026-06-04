@@ -1,12 +1,12 @@
 import {
   type CropState,
   type HandleDirection,
-  type Rect,
-  type Store,
-  type Viewport,
   pointDisplayToImage,
+  type Rect,
   resizeRectFromHandle,
+  type Store,
   translateClampedRect,
+  type Viewport,
 } from '@magicpages/kalotyp-core';
 
 export interface CropInteractionElements {

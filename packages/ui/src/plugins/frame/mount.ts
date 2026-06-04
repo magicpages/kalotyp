@@ -12,19 +12,19 @@
  */
 
 import {
+  computeViewport,
   FRAME_PRESETS,
   type FramePreset,
   type FramePresetId,
   type FrameState,
-  type SourceImage,
-  type Store,
-  type Viewport,
-  type ViewportController,
-  computeViewport,
   frameOutputSize,
   paintInsideFrame,
+  type SourceImage,
+  type Store,
   setFrameColor,
   setFramePreset,
+  type Viewport,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
 
 const STAGE_PADDING_PX = 32;

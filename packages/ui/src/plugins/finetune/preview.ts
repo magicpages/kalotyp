@@ -1,9 +1,9 @@
 import {
-  type FinetuneState,
   applyClarity,
   applyFinetuneLutAndSaturation,
   boxBlur3x3,
   buildFinetuneLut,
+  type FinetuneState,
   isFinetuneNoOp,
 } from '@magicpages/kalotyp-core';
 
@@ -18,10 +18,11 @@ export interface FinetunePreviewPipeline {
 }
 
 interface PreviewBuffers {
-  baseline: Uint8ClampedArray;
-  scratch: Uint8ClampedArray;
+  // ArrayBuffer-pinned so these are assignable to `new ImageData(...)`.
+  baseline: Uint8ClampedArray<ArrayBuffer>;
+  scratch: Uint8ClampedArray<ArrayBuffer>;
   /** Pre-blurred baseline for clarity; rebuilt with baseline. */
-  blurred: Uint8ClampedArray | undefined;
+  blurred: Uint8ClampedArray<ArrayBuffer> | undefined;
   width: number;
   height: number;
 }

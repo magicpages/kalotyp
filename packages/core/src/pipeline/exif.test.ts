@@ -5,7 +5,7 @@ function bytesToBlob(bytes: number[], type: string): Blob {
   return new Blob([new Uint8Array(bytes)], { type });
 }
 
-/** jsdom 25 lacks `Blob.arrayBuffer()`, so the test must read via FileReader. */
+/** Some jsdom versions lack `Blob.arrayBuffer()`, so the test reads via FileReader. */
 function readBytes(blob: Blob): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

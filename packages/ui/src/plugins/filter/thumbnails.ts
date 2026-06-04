@@ -1,8 +1,8 @@
 import {
+  applyFinetuneToImageData,
   type FilterPreset,
   type FilterPresetId,
   type RasterImage,
-  applyFinetuneToImageData,
 } from '@magicpages/kalotyp-core';
 
 /**

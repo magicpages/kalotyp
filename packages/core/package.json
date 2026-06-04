@@ -1,6 +1,6 @@
 {
   "name": "@magicpages/kalotyp-core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-agnostic editor engine for Kalotyp — an open-source image editor for Ghost CMS.",
   "license": "MIT",
   "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",
@@ -11,7 +11,12 @@
     "directory": "packages/core"
   },
   "bugs": "https://github.com/magicpages/kalotyp/issues",
-  "keywords": ["ghost", "image-editor", "canvas", "editor-engine"],
+  "keywords": [
+    "ghost",
+    "image-editor",
+    "canvas",
+    "editor-engine"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -23,7 +28,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true

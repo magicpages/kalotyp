@@ -1,6 +1,6 @@
 {
   "name": "@magicpages/kalotyp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Kalotyp — an open-source image editor for Ghost CMS. The bundle Ghost loads (kalotyp.js + kalotyp.css).",
   "license": "MIT",
   "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",
@@ -11,7 +11,12 @@
     "directory": "packages/ghost"
   },
   "bugs": "https://github.com/magicpages/kalotyp/issues",
-  "keywords": ["ghost", "ghost-cms", "image-editor", "koenig"],
+  "keywords": [
+    "ghost",
+    "ghost-cms",
+    "image-editor",
+    "koenig"
+  ],
   "type": "module",
   "main": "./dist/kalotyp.js",
   "types": "./dist/index.d.ts",
@@ -24,7 +29,9 @@
     },
     "./styles.css": "./dist/kalotyp.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true

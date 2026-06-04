@@ -24,15 +24,14 @@ automatically from [jsDelivr](https://www.jsdelivr.com/), a free, GDPR-compliant
 multi-CDN that doesn't log personal data:
 
 ```
-JS:  https://cdn.jsdelivr.net/npm/@magicpages/kalotyp@1/dist/kalotyp.js
-CSS: https://cdn.jsdelivr.net/npm/@magicpages/kalotyp@1/dist/kalotyp.css
+JS:  https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.js
+CSS: https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.css
 ```
 
-The `@1` pins the major version — you get patches and features automatically but
-never a breaking change. Pin an exact version (e.g. `@1.2.0`) if you'd rather
-upgrade deliberately. The same files are mirrored on
-[unpkg](https://unpkg.com/) at `https://unpkg.com/@magicpages/kalotyp@1/dist/kalotyp.js`
-if you prefer.
+These always serve the latest published release. Pin an exact version (e.g.
+`@magicpages/kalotyp@0.1.1/dist/kalotyp.js`) if you'd rather upgrade deliberately.
+The same files are mirrored on [unpkg](https://unpkg.com/) at
+`https://unpkg.com/@magicpages/kalotyp/dist/kalotyp.js` if you prefer.
 
 ### Option B — Upload the files
 

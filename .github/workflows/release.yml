@@ -9,11 +9,14 @@ name: Release
 #      CDN URLs live — no separate CDN step is needed.
 #
 # Auth: npm Trusted Publishing (OIDC). No NPM_TOKEN secret is stored; the
-# `id-token: write` permission lets the runner mint a short-lived token, and
-# `publishConfig.provenance` in each package stamps a verifiable link from the
-# published artifact back to this workflow + commit. The trusted publisher must
-# be configured once on npmjs.com for each package (Settings → Trusted Publisher
-# → GitHub Actions → magicpages/kalotyp, workflow `release.yml`).
+# `id-token: write` permission lets the runner mint a short-lived token.
+# Provenance is enabled via the NPM_CONFIG_PROVENANCE env var on the publish
+# step (not via publishConfig — that would break local `pnpm publish`, which
+# has no OIDC provider). In CI the provider is present, so each publish is
+# stamped with a verifiable link back to this workflow + commit. The trusted
+# publisher must be configured once on npmjs.com for each package
+# (Settings → Trusted Publisher → GitHub Actions → magicpages/kalotyp,
+# workflow `release.yml`).
 
 on:
   push:
@@ -66,3 +69,6 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # OIDC is present in CI, so provenance can be generated here. (Locally
+          # this is left unset / false, since a local publish has no provider.)
+          NPM_CONFIG_PROVENANCE: "true"

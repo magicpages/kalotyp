@@ -1,5 +1,17 @@
 # @magicpages/kalotyp-ui
 
+## 0.1.1
+
+### Patch Changes
+
+- Fix the published dependency ranges. 0.1.0 was published with `npm publish`,
+  which left the internal `workspace:*` protocol in the manifests verbatim, so
+  `npm install @magicpages/kalotyp` failed with `EUNSUPPORTEDPROTOCOL`. Republished
+  via `pnpm publish`, which rewrites those to real version ranges. (The CDN bundle
+  was unaffected — it inlines its dependencies at build time.)
+- Updated dependencies
+  - @magicpages/kalotyp-core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

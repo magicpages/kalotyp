@@ -101,10 +101,14 @@
   cursor: ew-resize;
 }
 .kalotyp-finetune-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+  box-shadow:
+    0 0 0 2px rgb(var(--color-background)),
+    0 0 0 5px rgb(var(--color-foreground));
 }
 .kalotyp-finetune-slider:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+  box-shadow:
+    0 0 0 2px rgb(var(--color-background)),
+    0 0 0 5px rgb(var(--color-foreground));
 }
 
 .kalotyp-finetune-input {

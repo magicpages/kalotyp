@@ -1,8 +1,8 @@
 import {
-  type RedactState,
-  type UtilityPlugin,
   bakeRedact,
   initialRedactState,
+  type RedactState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountRedactUtility } from './mount.js';
 

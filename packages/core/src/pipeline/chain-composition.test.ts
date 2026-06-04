@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Size } from '../geometry/rect.js';
+import type { CropState, FlipState, ResizeState, RotateState } from '../index.js';
 import {
   effectiveAngleDeg,
   initialFlipState,
@@ -12,7 +13,6 @@ import {
   setPercent,
   toggleFlip,
 } from '../index.js';
-import type { CropState, FlipState, ResizeState, RotateState } from '../index.js';
 
 interface ChainStates {
   readonly crop: CropState;

@@ -7,8 +7,8 @@
 
 import {
   type AnnotateTool,
-  type StylePalette,
   isKeyboardPlaceableKind,
+  type StylePalette,
 } from '@magicpages/kalotyp-core';
 import { icon } from '../../icons.js';
 

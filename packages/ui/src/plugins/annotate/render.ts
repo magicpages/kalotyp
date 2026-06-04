@@ -16,7 +16,7 @@
  * the bake output (per shape).
  */
 
-import { type Shape, type SourceImage, type Viewport, paintShape } from '@magicpages/kalotyp-core';
+import { paintShape, type Shape, type SourceImage, type Viewport } from '@magicpages/kalotyp-core';
 
 /**
  * Resize the canvas's backing store to the stage CSS pixels × DPR

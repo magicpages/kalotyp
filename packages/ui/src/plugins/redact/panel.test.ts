@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type RedactPanel, buildRedactPanel } from './panel.js';
+import { buildRedactPanel, type RedactPanel } from './panel.js';
 
 function makePanel(overrides: Partial<Parameters<typeof buildRedactPanel>[0]> = {}): {
   panel: RedactPanel;

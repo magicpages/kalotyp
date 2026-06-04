@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ViewportController } from './viewport-controller.js';
 import {
   computeViewport,
   pointDisplayToImage,
@@ -7,32 +6,32 @@ import {
   rectDisplayToImage,
   rectImageToDisplay,
 } from './viewport.js';
+import { ViewportController } from './viewport-controller.js';
 
 const STAGE = { width: 1280, height: 800, padding: 32 };
 const IMAGE = { width: 4000, height: 3000 };
 const ZOOM_LEVELS = [0.5, 1, 2, 4];
 
 describe('coordinate flow at multiple zoom levels', () => {
-  it.each(ZOOM_LEVELS)(
-    'a "user click" at the visible position of an image pixel maps back to the same pixel — zoom=%s',
-    (zoom) => {
-      const transform = { zoom, panX: 0, panY: 0 };
-      const v = computeViewport(STAGE, IMAGE, transform);
+  it.each(
+    ZOOM_LEVELS,
+  )('a "user click" at the visible position of an image pixel maps back to the same pixel — zoom=%s', (zoom) => {
+    const transform = { zoom, panX: 0, panY: 0 };
+    const v = computeViewport(STAGE, IMAGE, transform);
 
-      const samples = [
-        { x: 0, y: 0 },
-        { x: IMAGE.width, y: IMAGE.height },
-        { x: IMAGE.width / 2, y: IMAGE.height / 2 },
-        { x: 1234, y: 567 },
-      ];
-      for (const original of samples) {
-        const display = pointImageToDisplay(original, v);
-        const back = pointDisplayToImage(display, v);
-        expect(back.x).toBeCloseTo(original.x);
-        expect(back.y).toBeCloseTo(original.y);
-      }
-    },
-  );
+    const samples = [
+      { x: 0, y: 0 },
+      { x: IMAGE.width, y: IMAGE.height },
+      { x: IMAGE.width / 2, y: IMAGE.height / 2 },
+      { x: 1234, y: 567 },
+    ];
+    for (const original of samples) {
+      const display = pointImageToDisplay(original, v);
+      const back = pointDisplayToImage(display, v);
+      expect(back.x).toBeCloseTo(original.x);
+      expect(back.y).toBeCloseTo(original.y);
+    }
+  });
 
   it.each(ZOOM_LEVELS)('a rectangle round-trips through display space — zoom=%s', (zoom) => {
     const transform = { zoom, panX: 0, panY: 0 };
@@ -106,18 +105,17 @@ describe('controller-driven zoom flow (smoke for plugin integration)', () => {
     expect(imageUnderAnchorAfter.y).toBeCloseTo(imageUnderAnchorBefore.y);
   });
 
-  it.each([2, 4])(
-    'zoom=%s: an image-space point projected to display, then panned-and-zoomed-back, returns to the same image-space point',
-    (zoom) => {
-      const c = new ViewportController({ zoom, panX: -50, panY: 30 });
-      const v = c.computeViewport(STAGE, IMAGE);
-      const original = { x: 1500, y: 1000 };
-      const display = pointImageToDisplay(original, v);
-      const back = pointDisplayToImage(display, v);
-      expect(back.x).toBeCloseTo(original.x);
-      expect(back.y).toBeCloseTo(original.y);
-    },
-  );
+  it.each([
+    2, 4,
+  ])('zoom=%s: an image-space point projected to display, then panned-and-zoomed-back, returns to the same image-space point', (zoom) => {
+    const c = new ViewportController({ zoom, panX: -50, panY: 30 });
+    const v = c.computeViewport(STAGE, IMAGE);
+    const original = { x: 1500, y: 1000 };
+    const display = pointImageToDisplay(original, v);
+    const back = pointDisplayToImage(display, v);
+    expect(back.x).toBeCloseTo(original.x);
+    expect(back.y).toBeCloseTo(original.y);
+  });
 });
 
 describe('output bake invariance under zoom', () => {

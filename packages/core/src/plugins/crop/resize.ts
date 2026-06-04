@@ -1,4 +1,4 @@
-import { type Point, type Rect, clampRectInside } from '../../geometry/rect.js';
+import { clampRectInside, type Point, type Rect } from '../../geometry/rect.js';
 import { type AspectAnchor, applyAspectRatio } from './aspect-ratio.js';
 
 export type CornerHandle = 'tl' | 'tr' | 'bl' | 'br';

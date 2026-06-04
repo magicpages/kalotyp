@@ -1,8 +1,8 @@
 import {
-  type RotateState,
-  type UtilityPlugin,
   bakeRotate,
   initialRotateState,
+  type RotateState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountRotateUtility } from './mount.js';
 

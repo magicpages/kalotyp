@@ -20,8 +20,8 @@
  */
 
 import {
-  SYSTEM_FONT_STACK,
   type SourceImage,
+  SYSTEM_FONT_STACK,
   type TextShape,
   type Viewport,
 } from '@magicpages/kalotyp-core';

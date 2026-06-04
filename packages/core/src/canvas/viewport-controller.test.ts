@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ZOOM, MIN_ZOOM, ViewportController } from './viewport-controller.js';
 import { IDENTITY_VIEWPORT_TRANSFORM } from './viewport.js';
+import { MAX_ZOOM, MIN_ZOOM, ViewportController } from './viewport-controller.js';
 
 describe('ViewportController', () => {
   it('initialises at identity', () => {

@@ -2,14 +2,14 @@ import {
   RESIZE_MAX_DIMENSION,
   RESIZE_MIN_DIMENSION,
   type ResizeState,
+  resolveOutputSize,
   type SourceImage,
   type Store,
-  type ViewportController,
-  resolveOutputSize,
   setHeightPx,
   setLockAspect,
   setPercent,
   setWidthPx,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
 import {
   buildPreviewCanvas,

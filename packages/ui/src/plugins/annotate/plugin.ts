@@ -1,8 +1,8 @@
 import {
   type AnnotateState,
-  type UtilityPlugin,
   bakeAnnotate,
   initialAnnotateState,
+  type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
 import { mountAnnotateUtility } from './mount.js';
 

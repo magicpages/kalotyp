@@ -1,4 +1,4 @@
-import { type Rect, clampRectInside } from '../../geometry/rect.js';
+import { clampRectInside, type Rect } from '../../geometry/rect.js';
 
 /**
  * Compute the largest axis-aligned rectangle of `targetRatio` (= w/h) that

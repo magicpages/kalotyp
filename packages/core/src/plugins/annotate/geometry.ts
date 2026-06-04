@@ -1,5 +1,5 @@
 import type { Rect } from '../../geometry/rect.js';
-import { type Shape, assertNever } from './state.js';
+import { assertNever, type Shape } from './state.js';
 
 /**
  * Axis-aligned bounding box in image-space pixels. Text uses a font-metric

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FRAME_STATE,
-  FRAME_PRESETS,
   FRAME_PRESET_IDS,
+  FRAME_PRESETS,
   findFramePreset,
   initialFrameState,
   isFrameNoOp,

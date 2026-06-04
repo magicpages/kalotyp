@@ -1,4 +1,4 @@
-import { type Rect, type Viewport, rectImageToDisplay } from '@magicpages/kalotyp-core';
+import { type Rect, rectImageToDisplay, type Viewport } from '@magicpages/kalotyp-core';
 
 const MASK_FILL = 'rgba(0, 0, 0, 0.4)';
 // Halo pattern (wide soft-black under, 1px white over) stays readable on any background

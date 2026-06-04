@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clampQuality,
   DEFAULT_OUTPUT_STATE,
   ENCODABLE_MIMES,
-  clampQuality,
   setOutputMime,
   setOutputQuality,
   setStripMetadata,

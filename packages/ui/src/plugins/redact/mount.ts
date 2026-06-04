@@ -11,33 +11,33 @@
  */
 
 import {
-  type Point,
-  type RedactMode,
-  type RedactRegion,
-  type RedactState,
-  type SourceImage,
-  type Store,
-  type Viewport,
-  type ViewportController,
   addRegion,
   computeViewport,
   createCenteredRedactRegion,
   deleteRedactRegion,
   mintRegionId,
   normaliseRedactExtent,
+  type Point,
   pointDisplayToImage,
+  type RedactMode,
+  type RedactRegion,
+  type RedactState,
   replaceRedactRegion,
   revalidateRedactAgainstBounds,
-  selectRedactRegion,
+  type SourceImage,
+  type Store,
   selectedRedactRegionOf,
+  selectRedactRegion,
   setRedactCurrentColor,
   setRedactCurrentMode,
   setRedactRegionColor,
   setRedactRegionMode,
+  type Viewport,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
-import { type DragHandlers, attachPointerDrag, clientToElement } from '../annotate/pointer-drag.js';
+import { attachPointerDrag, clientToElement, type DragHandlers } from '../annotate/pointer-drag.js';
 import { buildRedactCoordInputs } from './coord-inputs.js';
-import { type RedactPanel, buildRedactPanel } from './panel.js';
+import { buildRedactPanel, type RedactPanel } from './panel.js';
 import { paintRedactImageLayer, paintRedactLiveLayer, paintRedactRegionsLayer } from './render.js';
 import { buildRedactSelectionLayer } from './selection.js';
 import { buildRedactStage } from './stage.js';

@@ -2,8 +2,8 @@
 
 import { openNestedModal } from '../dom/nested-modal.js';
 import {
-  KEYBOARD_SHORTCUTS,
   KEYBOARD_SHORTCUT_CONTEXT_LABELS,
+  KEYBOARD_SHORTCUTS,
   type KeyboardShortcut,
   type KeyboardShortcutContext,
 } from '../keyboard-shortcuts.js';

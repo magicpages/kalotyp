@@ -1,5 +1,5 @@
 import { bakeCanvasToBlob, canEncodeMime, createBakeCanvas } from '../canvas/bake-canvas.js';
-import { DEFAULT_OUTPUT_STATE, type OutputState, clampQuality } from '../output/state.js';
+import { clampQuality, DEFAULT_OUTPUT_STATE, type OutputState } from '../output/state.js';
 import type { SourceImage } from '../plugins/utility.js';
 import { copyJpegExif } from './exif.js';
 

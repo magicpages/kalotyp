@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_DIMENSION,
   effectivePercent,
   initialResizeState,
   isResizeNoOp,
+  MAX_DIMENSION,
   resolveOutputSize,
   setHeightPx,
   setLockAspect,

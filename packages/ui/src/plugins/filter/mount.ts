@@ -4,14 +4,14 @@ import {
   type FilterPreset,
   type FilterPresetId,
   type FinetuneState,
+  findActivePreset,
   type SourceImage,
   type Store,
   type ViewportController,
-  findActivePreset,
 } from '@magicpages/kalotyp-core';
 import { buildPreviewCanvas, previewViewportFor } from '../../canvas/preview-canvas.js';
 import { buildFinetunePreviewPipeline } from '../finetune/preview.js';
-import { type ThumbnailCache, buildThumbnailCache, computeThumbnailDims } from './thumbnails.js';
+import { buildThumbnailCache, computeThumbnailDims, type ThumbnailCache } from './thumbnails.js';
 
 export interface MountFilterOptions {
   readonly stageHost: HTMLElement;

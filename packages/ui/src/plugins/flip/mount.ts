@@ -2,8 +2,8 @@ import {
   type FlipState,
   type SourceImage,
   type Store,
-  type ViewportController,
   toggleFlip,
+  type ViewportController,
 } from '@magicpages/kalotyp-core';
 import {
   buildPreviewCanvas,

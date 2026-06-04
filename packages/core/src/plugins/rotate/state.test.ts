@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  effectiveAngleDeg,
   FREE_ANGLE_MAX,
   FREE_ANGLE_MIN,
-  effectiveAngleDeg,
   initialRotateState,
   isRotateNoOp,
   rotateClockwise,

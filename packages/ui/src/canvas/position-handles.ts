@@ -2,8 +2,8 @@ import {
   type CornerHandle,
   type EdgeHandle,
   type Rect,
-  type Viewport,
   rectImageToDisplay,
+  type Viewport,
 } from '@magicpages/kalotyp-core';
 
 /**

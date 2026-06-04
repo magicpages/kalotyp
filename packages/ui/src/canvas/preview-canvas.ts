@@ -1,8 +1,8 @@
 import {
+  computeViewport,
   type SourceImage,
   type Viewport,
   type ViewportController,
-  computeViewport,
 } from '@magicpages/kalotyp-core';
 
 const STAGE_PADDING_PX = 32;
@@ -63,5 +63,5 @@ export function paintPreview(
   draw(ctx);
 }
 
-export { STAGE_PADDING_PX };
 export type { SourceImage };
+export { STAGE_PADDING_PX };

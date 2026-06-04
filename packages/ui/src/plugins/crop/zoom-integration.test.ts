@@ -4,11 +4,11 @@
  */
 
 import {
-  ViewportController,
   computeViewport,
   createStore,
   initialCropState,
   pointImageToDisplay,
+  ViewportController,
 } from '@magicpages/kalotyp-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mountCropUtility } from './mount.js';

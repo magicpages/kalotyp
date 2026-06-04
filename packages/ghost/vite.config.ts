@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 const aliasToSource = {
   '@magicpages/kalotyp-core': resolve(__dirname, '../core/src/index.ts'),
+  '@magicpages/kalotyp-ui/styles.css': resolve(__dirname, '../ui/src/styles/index.css'),
   '@magicpages/kalotyp-ui': resolve(__dirname, '../ui/src/index.ts'),
 };
 
@@ -15,7 +16,7 @@ export default defineConfig({
     sourcemap: false,
     emptyOutDir: true,
     cssCodeSplit: false,
-    minify: 'esbuild',
+    minify: 'oxc',
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['umd'],
@@ -25,11 +26,7 @@ export default defineConfig({
     rollupOptions: {
       external: [],
       output: {
-        inlineDynamicImports: true,
-        assetFileNames: (asset) => {
-          if (asset.name?.endsWith('.css')) return 'kalotyp.css';
-          return '[name][extname]';
-        },
+        assetFileNames: (asset) => (asset.name === 'style.css' ? 'kalotyp.css' : '[name][extname]'),
         exports: 'named',
       },
     },

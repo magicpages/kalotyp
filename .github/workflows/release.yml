@@ -63,8 +63,11 @@ jobs:
       - name: Create Version PR or publish
         uses: changesets/action@v1
         with:
-          version: pnpm version
-          publish: pnpm release
+          # `pnpm run …`, not `pnpm version` — the latter is pnpm's built-in
+          # version command (it just prints versions) and would never run the
+          # changeset-version script, leaving the Version PR with an empty diff.
+          version: pnpm run version
+          publish: pnpm run release
           commit: "chore: version packages"
           title: "chore: version packages"
         env:

@@ -1,0 +1,344 @@
+.kalotyp-util-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--kalotyp-track);
+  border-radius: var(--kalotyp-radius-lg);
+}
+
+.kalotyp-util-nav-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-weight: 500;
+  cursor: pointer;
+  /* font-weight excluded so the active-tab boldness snaps; other props ease. */
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kalotyp-util-nav-button:hover {
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-util-nav-button:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-util-nav-button[aria-selected="true"] {
+  background: rgb(var(--color-background));
+  border-color: var(--kalotyp-border);
+  color: rgb(var(--color-foreground));
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.kalotyp-util-nav-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kalotyp-preview-canvas {
+  pointer-events: none;
+}
+
+.kalotyp-flip-panel,
+.kalotyp-rotate-panel,
+.kalotyp-resize-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  font-size: var(--kalotyp-text-size);
+}
+
+.kalotyp-rotate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kalotyp-resize-row {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.kalotyp-util-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 24px;
+  min-height: 88px;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--kalotyp-border);
+  background: rgb(var(--color-background));
+}
+
+.kalotyp-flip-panel {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.kalotyp-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  height: var(--kalotyp-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-toggle-button:hover {
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-toggle-button:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-toggle-button[aria-pressed="true"] {
+  background: rgb(var(--color-foreground));
+  border-color: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+}
+
+.kalotyp-rotate-slider-label {
+  font-size: var(--kalotyp-text-size);
+  color: var(--kalotyp-muted);
+  min-width: 72px;
+}
+
+.kalotyp-rotate-slider {
+  flex: 1;
+  min-width: 220px;
+  height: 4px;
+  cursor: ew-resize;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.kalotyp-rotate-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--kalotyp-border);
+  border-radius: 999px;
+}
+.kalotyp-rotate-slider::-moz-range-track {
+  height: 4px;
+  background: var(--kalotyp-border);
+  border-radius: 999px;
+}
+.kalotyp-rotate-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  border: 2px solid rgb(var(--color-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: ew-resize;
+}
+.kalotyp-rotate-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  border: 2px solid rgb(var(--color-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: ew-resize;
+}
+.kalotyp-rotate-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+}
+.kalotyp-rotate-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+}
+
+.kalotyp-rotate-input {
+  width: 72px;
+  height: var(--kalotyp-control-height);
+  padding: 0 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-rotate-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+  background: rgb(var(--color-background));
+}
+
+.kalotyp-rotate-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kalotyp-rotate-suffix {
+  font-size: var(--kalotyp-text-size);
+  color: var(--kalotyp-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-rotate-reset {
+  height: var(--kalotyp-control-height);
+  padding: 0 12px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-rotate-reset:hover {
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-rotate-reset:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-quarter-button {
+  width: 36px;
+  height: var(--kalotyp-control-height);
+  padding: 0;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-quarter-button:hover {
+  background: var(--kalotyp-soft);
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-quarter-button:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-resize-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kalotyp-resize-field-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-weight: 500;
+}
+
+.kalotyp-resize-input {
+  width: 92px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-resize-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+  background: rgb(var(--color-background));
+}
+
+/* Aspect-lock chain button between the Width and Height inputs. */
+.kalotyp-resize-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-resize-lock:hover {
+  border-color: var(--kalotyp-border-strong);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-resize-lock:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-resize-lock[aria-pressed="true"] {
+  color: rgb(var(--color-foreground));
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-resize-dims {
+  align-items: end;
+}
+
+.kalotyp-resize-dims .kalotyp-resize-lock {
+  margin-bottom: 2px;
+}
+
+.kalotyp-resize-summary {
+  font-size: var(--kalotyp-text-size);
+  color: rgb(var(--color-foreground));
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-resize-helper {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+}

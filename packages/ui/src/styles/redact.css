@@ -1,0 +1,305 @@
+/* Phase 6.4 redact plugin.
+ *
+ * Stage layout mirrors the annotate plugin: layered canvases for
+ * image / regions / live, with a hit area on top for pointer dispatch
+ * and a handles layer for the selection's resize handles. The class
+ * names use the `kalotyp-redact-*` prefix so they don't collide with
+ * the annotate plugin's selectors.
+ *
+ * The panel is a mode toolbar (radiogroup over pixelate / blur /
+ * solid), a style row with the colour picker (only enabled when the
+ * mode is `solid`), Insert at centre, and Delete. Below the row sits
+ * the per-selection coordinate-input slot.
+ */
+
+.kalotyp-redact-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+.kalotyp-redact-image,
+.kalotyp-redact-regions,
+.kalotyp-redact-live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}
+
+.kalotyp-redact-regions {
+  z-index: 1;
+}
+.kalotyp-redact-live {
+  z-index: 2;
+}
+
+.kalotyp-redact-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: crosshair;
+}
+
+.kalotyp-redact-handles {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.kalotyp-redact-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border: 2px solid rgb(var(--color-background));
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 0;
+  font-size: 0;
+  touch-action: none;
+}
+
+.kalotyp-redact-handle:focus-visible {
+  outline: 2px solid var(--kalotyp-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--kalotyp-focus-halo);
+}
+
+.kalotyp-redact-handle[data-direction="tl"],
+.kalotyp-redact-handle[data-direction="br"] {
+  cursor: nwse-resize;
+}
+
+.kalotyp-redact-handle[data-direction="tr"],
+.kalotyp-redact-handle[data-direction="bl"] {
+  cursor: nesw-resize;
+}
+
+.kalotyp-redact-handle[data-direction="t"],
+.kalotyp-redact-handle[data-direction="b"] {
+  cursor: ns-resize;
+}
+
+.kalotyp-redact-handle[data-direction="l"],
+.kalotyp-redact-handle[data-direction="r"] {
+  cursor: ew-resize;
+}
+
+/* ----- Panel ----- */
+
+.kalotyp-redact-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: var(--kalotyp-text-size);
+}
+
+.kalotyp-redact-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.kalotyp-redact-mode {
+  height: var(--kalotyp-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-redact-mode:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-redact-mode:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* Active state. Phase 6.6 polish: explicit `font-weight: 600`,
+ * inset shadow, and `!important` on the background pin the visual
+ * over any focus / hover state that may otherwise overlap. The
+ * active mode now reads at a glance, even when it's also focused. */
+.kalotyp-redact-mode--active {
+  background: rgb(var(--color-foreground)) !important;
+  color: rgb(var(--color-background)) !important;
+  border-color: rgb(var(--color-foreground)) !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgb(var(--color-foreground)) inset;
+}
+
+.kalotyp-redact-style-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Group the colour controls and the action buttons so they wrap as
+ * units, not as individual elements (Phase 6.6 mobile-layout fix —
+ * Delete previously hung alone on its own row). */
+.kalotyp-redact-color-group,
+.kalotyp-redact-button-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.kalotyp-redact-color-hint {
+  flex: 1 1 100%;
+  text-align: center;
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-style: italic;
+}
+
+.kalotyp-redact-color-hint[hidden] {
+  display: none;
+}
+
+.kalotyp-redact-color {
+  width: 36px;
+  height: var(--kalotyp-control-height);
+  padding: 0;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  cursor: pointer;
+}
+
+.kalotyp-redact-color:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kalotyp-redact-hex {
+  width: 100px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.kalotyp-redact-hex:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kalotyp-redact-hex:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-redact-insert,
+.kalotyp-redact-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--kalotyp-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-redact-insert:hover,
+.kalotyp-redact-delete:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-redact-insert:focus-visible,
+.kalotyp-redact-delete:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-redact-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- Per-selection coordinate inputs (Phase 6.4 a11y) ----- */
+
+.kalotyp-redact-coords {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.kalotyp-redact-coords[hidden] {
+  display: none;
+}
+
+.kalotyp-redact-coords-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kalotyp-redact-coords-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-weight: 500;
+}
+
+.kalotyp-redact-coords-input {
+  width: 80px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-redact-coords-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+  background: rgb(var(--color-background));
+}

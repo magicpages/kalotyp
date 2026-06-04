@@ -1,0 +1,238 @@
+/* Crop UI.
+ *
+ * DOM contract:
+ *
+ *  - Each corner is a `.kalotyp-corner-anchor` div positioned at the
+ *    rect corner. Inside the anchor, a `<button>` carries the class
+ *    `.kalotyp-handle` and the attributes `data-shape="circle"` and
+ *    `data-direction="tl|tr|bl|br"`.
+ *  - Edge handles use the same class with `data-shape="edge"` and
+ *    `data-direction="t|r|b|l"`.
+ *
+ * Kalotyp default visuals — what the playground (and any non-Ghost
+ * embed) renders:
+ *
+ *  - Corner handle: a small filled disc centred on the rect corner.
+ *    Reads as a knob; aligns with Ghost's Shade design idiom (round-
+ *    cornered, low-chrome controls).
+ *  - Edge handle: a 6 px line along the side, shortened in JS so the
+ *    corner disc doesn't overlap. Same chrome tokens as the rest of
+ *    Kalotyp's UI.
+ */
+
+.kalotyp-stage-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+.kalotyp-stage-status {
+  position: absolute;
+  inset: 50% 0 auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  text-align: center;
+  pointer-events: none;
+  color: rgba(var(--color-foreground), 0.7);
+  font-size: 14px;
+}
+
+.kalotyp-stage-image,
+.kalotyp-stage-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}
+
+.kalotyp-stage-overlay {
+  z-index: 1;
+}
+
+.kalotyp-stage-body {
+  position: absolute;
+  z-index: 2;
+  cursor: move;
+  touch-action: none;
+}
+
+.kalotyp-handles {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Per-corner anchor: zero-size positioning context placed at the rect
+ * corner. The handle's `[data-direction=…]` left/top offsets resolve
+ * relative to this anchor. */
+.kalotyp-corner-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.kalotyp-handle {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Corner handle — Kalotyp default. A 12 px filled disc centred on
+ * the rect corner via negative offsets. The fill follows
+ * `--color-foreground` so the handle reads on a dark or a light
+ * stage; a 2 px ring in `--color-background` keeps it visible
+ * against busy image content; a soft shadow gives it weight without
+ * looking heavy. */
+.kalotyp-handle[data-shape="circle"] {
+  width: 12px;
+  height: 12px;
+  left: -6px;
+  top: -6px;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  border: 2px solid rgb(var(--color-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* Cursor direction follows the standard browser convention for
+ * axis-aligned rectangle resize. */
+.kalotyp-handle[data-shape="circle"][data-direction="tl"],
+.kalotyp-handle[data-shape="circle"][data-direction="br"] {
+  cursor: nwse-resize;
+}
+.kalotyp-handle[data-shape="circle"][data-direction="tr"],
+.kalotyp-handle[data-shape="circle"][data-direction="bl"] {
+  cursor: nesw-resize;
+}
+
+/* Edge: 6px-thick line centred on the rect stroke via negative margin. */
+.kalotyp-handle[data-shape="edge"][data-direction="t"],
+.kalotyp-handle[data-shape="edge"][data-direction="b"] {
+  height: 6px;
+  margin-top: -3px;
+  cursor: ns-resize;
+}
+.kalotyp-handle[data-shape="edge"][data-direction="l"],
+.kalotyp-handle[data-shape="edge"][data-direction="r"] {
+  width: 6px;
+  margin-left: -3px;
+  cursor: ew-resize;
+}
+
+.kalotyp-handle:focus-visible {
+  outline: 2px solid var(--kalotyp-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--kalotyp-focus-halo);
+}
+
+/* Vertical container for the crop panel — preset row above, numeric
+ * dimension inputs below. The util-main slot's `display: flex;
+ * align-items: center` lays out children horizontally; wrapping
+ * both rows in this column keeps them stacked. */
+.kalotyp-crop-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.kalotyp-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.kalotyp-preset-button {
+  display: inline-flex;
+  align-items: center;
+  height: var(--kalotyp-control-height);
+  padding: 0 12px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-preset-button:hover {
+  background: var(--kalotyp-soft);
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-preset-button:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-preset-button[aria-checked="true"] {
+  background: rgb(var(--color-foreground));
+  border-color: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+}
+
+/* Numeric crop-region inputs. The row
+ * shows below the preset row in the panel; same control rhythm as
+ * the Phase 2 resize panel (labelled inputs in 4 fields).
+ */
+.kalotyp-crop-dims {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.kalotyp-crop-dims-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kalotyp-crop-dims-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-weight: 500;
+}
+
+.kalotyp-crop-dims-input {
+  width: 80px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-crop-dims-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+  background: rgb(var(--color-background));
+}

@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: lint · typecheck · test · build · size
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Bundle-size budget
+        run: pnpm size
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @magicpages/kalotyp-ghost-test exec playwright install --with-deps chromium
+
+      - name: Accessibility gate (axe-core desktop + mobile + keyboard-only flow)
+        # Two axe projects run here. The desktop project verifies the
+        # editor's ARIA / focus model on a 1280×900 viewport plus the
+        # keyboard-only edit-and-save round-trip. The iPhone-13 mobile
+        # project (390×844, chromium engine) re-runs axe under the
+        # narrow-viewport layout so violations specific to that layout
+        # fail CI alongside desktop ones. A single engine suffices
+        # because axe findings are about DOM/ARIA shape, not
+        # engine-specific rendering.
+        run: pnpm --filter @magicpages/kalotyp-ghost-test test:axe
+
+      - name: Upload Ghost build
+        uses: actions/upload-artifact@v5
+        with:
+          name: kalotyp-ghost-dist
+          path: packages/ghost/dist
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: apps/ghost-test/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,78 @@
+/* Keyboard cheatsheet — a centred modal listing all shortcuts
+ * grouped by context. Two-column dl/dt/dd layout with <kbd> pills
+ * for key tokens.
+ */
+
+.kalotyp-nested-overlay--modal .kalotyp-nested-surface.kalotyp-cheatsheet-modal {
+  min-width: 380px;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.kalotyp-cheatsheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kalotyp-cheatsheet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kalotyp-cheatsheet-heading {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kalotyp-muted);
+}
+
+.kalotyp-cheatsheet-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(140px, auto) 1fr;
+  column-gap: 16px;
+  row-gap: 6px;
+  align-items: baseline;
+}
+
+.kalotyp-cheatsheet-keys {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.kalotyp-cheatsheet-kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--kalotyp-soft);
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.kalotyp-cheatsheet-plus {
+  font-size: 11px;
+  color: var(--kalotyp-muted);
+}
+
+.kalotyp-cheatsheet-description {
+  margin: 0;
+  font-size: var(--kalotyp-text-size);
+  color: rgb(var(--color-foreground));
+  line-height: 1.4;
+}

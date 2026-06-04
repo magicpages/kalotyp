@@ -1,0 +1,631 @@
+/* Kalotyp default UI — base shell.
+ * The `.pintura-editor` and `.PinturaModal` class hooks exist only so Ghost's
+ * runtime can find and theme the editor (docs/ghost-contract.md). They are
+ * Ghost-compatibility hooks, not branding, and imply no affiliation with or
+ * endorsement by the editor Ghost named them after. Every other internal
+ * structural class carries the `kalotyp-` prefix.
+ *
+ * Visual language: matches Ghost's admin design system at the editor's level
+ * of detail — Inter font, black primary actions, bright-blue active-tab
+ * indicator, 4px radii on controls, grey-300 borders. The CSS custom
+ * properties Ghost may override per-site (`--color-foreground`,
+ * `--color-background`, `--font-family`, `--editor-modal-border-radius`)
+ * are honoured first; the additional `--kalotyp-*` tokens are local design
+ * choices and not part of the integration contract.
+ */
+
+.pintura-editor {
+  /* Contract §14.1 — these four are the names Ghost overrides per-site. */
+  --color-background: 255, 255, 255;
+  --color-foreground: 21, 23, 26;
+  --font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, "Helvetica Neue", Arial, sans-serif;
+  --editor-modal-border-radius: 0px;
+  color-scheme: light;
+
+  /* Kalotyp-internal tokens. Every chrome-colour token below is derived
+   * from `--color-foreground` and `--color-background` via alpha
+   * overlays so the editor inverts cleanly when Ghost overrides those
+   * tokens for dark mode (which it does by default in `pintura.css`,
+   * setting `--color-foreground: 255,255,255` and `--color-background:
+   * 0,0,0`). Hard-coded greys would survive light mode but break dark
+   * — that mistake landed in pass 2 and is fixed here.
+   *
+   * Focus rings used to use a literal green (`--kalotyp-success`) for
+   * historical reasons; moved them to a foreground/background
+   * pair to clear WCAG 2.2 SC 1.4.11's 3:1 contrast bar. The success
+   * green remains for non-focus affordances (a future "saved" toast). */
+  --kalotyp-success: 48, 207, 67;
+  --kalotyp-border: rgba(var(--color-foreground), 0.16);
+  --kalotyp-border-strong: rgba(var(--color-foreground), 0.36);
+  --kalotyp-muted: rgba(var(--color-foreground), 0.7);
+  --kalotyp-soft: rgba(var(--color-foreground), 0.08);
+  --kalotyp-track: rgba(var(--color-foreground), 0.1);
+  --kalotyp-radius: 6px;
+  --kalotyp-radius-lg: 10px;
+  --kalotyp-control-height: 36px;
+  --kalotyp-text-size: 13px;
+  --kalotyp-transition: all 0.2s ease;
+
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  background: rgb(var(--color-background));
+  font-family: var(--font-family);
+  color: rgb(var(--color-foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Honour Ghost admin's user-level dark/light theme (the `nightShift`
+ * feature toggle in `feature.js:147` mirrors itself onto
+ * `<html class="dark">`). Ghost's `pintura.css` forces dark
+ * unconditionally with `!important`, which means a user on light-mode
+ * admin still sees a dark editor — that's the inconsistency this
+ * block fixes. The selectors below carry one extra class
+ * (`html.dark` / `html:not(.dark)`) so they out-specify both
+ * Ghost's `pintura.css { .pintura-editor { … !important } }` and
+ * our own base block. The non-Ghost playground has neither class on
+ * `<html>`, so `:not(.dark)` matches and the editor stays light by
+ * default — which is what the playground wants.
+ *
+ * Bg/fg pair for dark uses Ghost's own `#15171A` foreground/background
+ * (sourced from `services/ui.js`'s `nightShift ? '#151719' : '#ffffff'`)
+ * rather than pure black so the editor matches Ghost's admin chrome
+ * exactly when the user has dark mode on. */
+html:not(.dark) .pintura-editor {
+  --color-background: 255, 255, 255 !important;
+  --color-foreground: 21, 23, 26 !important;
+  color-scheme: light;
+}
+
+html.dark .pintura-editor {
+  --color-background: 21, 23, 26 !important;
+  --color-foreground: 244, 245, 246 !important;
+  color-scheme: dark;
+}
+
+/* Use !important on the layout-critical rules. Ghost's site stylesheets
+ * commonly target the `Pintura*` class hooks with their own !important
+ * rules (Ghost's `pintura.css` ships a `.PinturaStage { width: 100% !important }`
+ * rule that bleeds down to the modal); we have to win the cascade for
+ * the height chain or the stage collapses to 0 and the canvas paints
+ * nothing. */
+.PinturaModal {
+  position: relative !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  background: rgb(var(--color-background));
+  border-radius: var(--editor-modal-border-radius);
+  overflow: hidden;
+}
+
+/* Phase 6.6 polish: the dialog root receives initial focus on mount
+ * (tabindex=-1, see build-shell-dom.ts) so the close button doesn't
+ * paint a focus ring on every open. The dialog itself never reads as
+ * focused — the ring would just be visual noise. */
+.kalotyp-editor:focus,
+.kalotyp-editor:focus-visible {
+  outline: none;
+}
+
+/* Preferences gear sits between the history controls and the close
+ * button at the top-right of the modal. From the right edge:
+ *   close (right:14px, 32px wide)  → ends at 46
+ *   prefs (right:56px, 32px wide)  → ends at 88
+ *   history (right:100px, 68px)    → ends at 168
+ * Each gap is 10–12px so the three groups read as distinct controls
+ * rather than running into each other. Same chrome treatment as the
+ * close button (transparent until hover, focus ring on keyboard focus). */
+.kalotyp-button-prefs {
+  position: absolute;
+  top: 18px;
+  right: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-button-prefs svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kalotyp-button-prefs:hover {
+  background: var(--kalotyp-soft);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-button-prefs:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-button-close {
+  position: absolute;
+  top: 18px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-button-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kalotyp-button-close:hover {
+  background: var(--kalotyp-soft);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-button-close:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-root {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  /* Without an explicit single-column track the grid defaults to
+   * `auto` columns, which size to max-content. On a narrow viewport
+   * (e.g. portrait phones) the nav-tools and panel rows have content
+   * intrinsic widths above the viewport — without minmax(0, 1fr)
+   * the grid expands its column past the modal, the stage canvas
+   * paints offscreen, and the page scrolls horizontally. The
+   * minmax(0, 1fr) clamps the column to the modal's width while
+   * still letting it grow to fill it. (Phase 6.1 mobile pass.) */
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.kalotyp-root[data-env~="landscape"] {
+  grid-template-rows: auto 1fr auto;
+}
+
+.kalotyp-nav-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Right padding leaves room for the floating top-right chrome:
+   * close (32) + prefs (32) + history controls (68) + gaps + a small
+   * buffer = ~180px. Keeps any future overflow in the nav from
+   * sliding under those buttons. */
+  padding: 14px 180px 14px 24px;
+  border-bottom: 1px solid var(--kalotyp-border);
+  /* Same fixed-chrome pattern as `.kalotyp-util-main` (see transform.css):
+   * min-height locks the floor, flex-shrink: 0 prevents collapse. */
+  min-height: 56px;
+  flex: 0 0 auto;
+}
+
+/* History controls (undo/redo) sit at the top-right of the modal,
+ * lifted out of the NavTools flex flow so they can share a horizontal
+ * baseline with the close button regardless of how the nav-tabs grow.
+ * Order from the right edge: close → prefs → history. The 100px right
+ * offset clears the prefs gear (which ends at 88) with a 12px gap. */
+.kalotyp-history-controls {
+  position: absolute;
+  top: 18px;
+  right: 100px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+.kalotyp-history-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kalotyp-muted);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-history-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kalotyp-history-button:hover:not(:disabled) {
+  color: rgb(var(--color-foreground));
+  background: var(--kalotyp-track);
+}
+
+.kalotyp-history-button:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-history-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Flex (not grid) for .kalotyp-main because Ghost's per-site CSS
+ * sometimes overrides our grid rules; flex with `flex: 1 1 0` on the stage
+ * is more forgiving — the stage gets remaining space as long as the
+ * container has *some* height, regardless of host CSS shape.
+ *
+ * The padding here gives the stage breathing room from the surrounding
+ * nav and footer chrome. Without it the stage's transparency-grid
+ * butts straight up against the nav border, which reads as a missing
+ * margin (visually flagged 2026-05-02). */
+.kalotyp-main {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  padding: 12px 16px 0;
+  /* `gap` separates the stage (top sibling) from the .kalotyp-util-main
+   * panel (bottom sibling) so the stage's rounded bottom corners
+   * stand clear of the panel's border-top instead of meeting it
+   * flush. Without this the corners visually clip against the
+   * separator line. */
+  gap: 12px;
+  background: rgb(var(--color-background));
+}
+
+.kalotyp-stage {
+  position: relative !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  border-radius: var(--kalotyp-radius);
+  /* Soft "mat" surrounding the image. The 6% foreground-alpha lands
+   * in the same zone as the conventional editor mat across the
+   * MIT-licensed editors we surveyed (miniPaint #dcdcdc, Figma
+   * #E5E5E5, Canva #F5F5F5 in light; tui-image-editor #2D2D2D,
+   * Photopea #535353 in dark). Pure white/black reads as stark and
+   * inconsistent with the image inside it; the mid-grey wash that
+   * GIMP / Photoshop use is too heavy for our small modal. 6% lands
+   * cleanly between the two and inverts naturally with foreground/
+   * background overrides for light↔dark mode. */
+  background: rgba(var(--color-foreground), 0.06);
+}
+
+.kalotyp-util-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--kalotyp-border);
+}
+
+/* Counter-overrides for Ghost's `pintura.css`. Ghost ships
+ * `core/ghost/admin/app/styles/components/pintura.css` with several
+ * `!important` layout rules tailored to the legacy Pintura side-panel
+ * UI (a 190px-wide vertical toolbar on the right). Kalotyp's nav lives
+ * across the top instead, so:
+ *
+ *   - the stage shouldn't reserve 190px for a phantom side panel;
+ *   - the `padding: 24px 24px 0 !important` Ghost forces on the nav
+ *     kills the bottom inset that visually separates nav from stage;
+ *   - the `padding-right: 0 !important` on `.kalotyp-util-main` and
+ *     `.kalotyp-util-footer` leaves their right-edge content flush with
+ *     the page edge in landscape.
+ *
+ * Each override here adds one extra class to the selector so it
+ * out-specifies the rule it counters and re-restores breathing room.
+ */
+.pintura-editor .kalotyp-root > .kalotyp-nav-tools {
+  padding-bottom: 14px !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-stage {
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.pintura-editor .kalotyp-root[data-env~="landscape"] .kalotyp-util-main {
+  padding-right: 24px !important;
+}
+
+.pintura-editor .kalotyp-root[data-env~="landscape"] .kalotyp-util-footer {
+  padding-right: 24px !important;
+}
+
+/* Save + caret split button.
+ *
+ * The two buttons render as one visual primary action. To keep them
+ * looking like a single pill we let the group own the visible chrome
+ * — one border, one radius, one rounded clip — and let the buttons
+ * inside be borderless rectangles. A 1 px inset divider on the caret
+ * separates the two halves without doubling up borders along the
+ * seam (which is what produced the misaligned-corners look in the
+ * manual pass).
+ *
+ * Hover and the open-popover state colour each half independently
+ * via the group's `:has()` selector. `:has()` is supported on every
+ * browser Kalotyp targets (Chrome 105 / Safari 15.4 / Firefox 121).
+ */
+.kalotyp-export-group {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--kalotyp-control-height);
+  border: 1px solid rgb(var(--color-foreground));
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-foreground));
+  overflow: hidden;
+  /* Sit on its own paint layer so the inner buttons' hover
+   * background transitions stay crisp at the rounded corners. */
+  isolation: isolate;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-export-group:focus-within {
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* Ghost's bundled `pintura.css` ships an `!important`-flagged hover
+ * rule that paints `.PinturaButtonExport:hover` white-on-black (Ghost's
+ * selector keys off the historical class hook). That suited the legacy
+ * Ghost side-panel UI but inverts our Save button on hover (white pill,
+ * low-contrast). The `.pintura-editor` + `.kalotyp-root` qualifiers below
+ * out-specify Ghost's selector so our dark-fill behaviour wins inside
+ * Ghost admin and continues to apply on the playground. */
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-export {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 100% !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgb(var(--color-background)) !important;
+  font-family: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-weight: 700 !important;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  opacity: 1 !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-export:hover {
+  background: rgba(var(--color-background), 0.12) !important;
+  color: rgb(var(--color-background)) !important;
+  opacity: 1 !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-export:focus-visible {
+  outline: none;
+  background: rgba(var(--color-background), 0.12) !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-export:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed;
+}
+
+.kalotyp-button-inner {
+  display: inline-block;
+}
+
+/* Output-settings caret. Same fill as the Save half (the group owns
+ * the fill); a 1 px inset divider on the left edge separates the two
+ * halves. */
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-output-settings {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 100% !important;
+  width: 36px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgb(var(--color-background)) !important;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  opacity: 1 !important;
+  /* The seam between Save and caret. A subtle 1 px line in the
+   * button text colour at 22% alpha — visible enough to read as a
+   * split-button affordance, quiet enough not to compete with the
+   * border that wraps the group. Box-shadow rather than a left
+   * border so neither half has to give up a pixel of padding. */
+  box-shadow: inset 1px 0 0 rgba(var(--color-background), 0.22);
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-output-settings:hover {
+  background: rgba(var(--color-background), 0.12) !important;
+  color: rgb(var(--color-background)) !important;
+  opacity: 1 !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-output-settings:focus-visible {
+  outline: none;
+  background: rgba(var(--color-background), 0.12) !important;
+}
+
+.pintura-editor .kalotyp-root .kalotyp-export-group .kalotyp-button-output-settings:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed;
+}
+
+.pintura-editor
+  .kalotyp-root
+  .kalotyp-export-group
+  .kalotyp-button-output-settings[aria-expanded="true"] {
+  background: rgba(var(--color-background), 0.18) !important;
+}
+
+/* When the user hovers the group as a whole, slightly soften the
+ * fill so the entire pill animates rather than just one half. The
+ * per-button :hover above overlays a brighter wash on the actual
+ * half under the pointer. */
+.pintura-editor .kalotyp-root .kalotyp-export-group:hover {
+  background: rgba(var(--color-foreground), 0.92);
+  border-color: rgba(var(--color-foreground), 0.92);
+}
+
+/* The visually-hidden utility: present in the a11y tree but
+ * not visible. Used for the dialog title (aria-labelledby target) and
+ * the polite live region. The clip-path / inset trick is the
+ * "sr-only" idiom from Tailwind's preflight; it survives RTL and
+ * doesn't lose focus when applied to an interactive element. */
+.kalotyp-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Focus-ring tokens. WCAG 2.2 SC 1.4.11 (Non-text Contrast) requires
+ * focus indicators to have at least 3:1 contrast against the
+ * adjacent unfocused colour. Our previous `--kalotyp-success` green
+ * at 25% alpha ran below that ratio against the white surface; the
+ * tokens below carry a stronger ring colour and a wider profile so
+ * the indicator clears the bar on every editor surface. The ring
+ * visualises in two layers — an inner "halo" the same colour as the
+ * page background (so it always reads on top of any element's own
+ * background) and an outer high-contrast border. pins this
+ * approach.
+ *
+ * The token chain inverts cleanly under dark mode because both the
+ * halo and the foreground accent come from the foreground/background
+ * RGB pair. */
+.pintura-editor {
+  --kalotyp-focus-ring: rgb(var(--color-foreground));
+  --kalotyp-focus-halo: rgb(var(--color-background));
+  --kalotyp-focus-shadow: 0 0 0 2px var(--kalotyp-focus-halo), 0 0 0 4px var(--kalotyp-focus-ring);
+}
+
+/* Nested overlay (output popover, preferences modal, cheatsheet).
+ * The overlay is a backdrop layer that dims the editor; the surface
+ * is the actual dialog/popover. Two variants share the chrome:
+ *   --modal:    centred over the editor; full backdrop dim
+ *   --popover:  anchored to a trigger; transparent backdrop
+ */
+.kalotyp-nested-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kalotyp-nested-overlay--modal {
+  background: rgba(var(--color-foreground), 0.32);
+}
+
+.kalotyp-nested-overlay--popover {
+  background: transparent;
+  pointer-events: auto;
+}
+
+.kalotyp-nested-surface {
+  position: relative;
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+  min-width: 280px;
+  max-width: min(520px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.kalotyp-nested-surface:focus-visible {
+  outline: none;
+}
+
+.kalotyp-nested-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--kalotyp-border);
+}
+
+.kalotyp-nested-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kalotyp-nested-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-nested-close:hover {
+  background: var(--kalotyp-soft);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-nested-close:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-nested-body {
+  padding: 16px 14px;
+  overflow-y: auto;
+}

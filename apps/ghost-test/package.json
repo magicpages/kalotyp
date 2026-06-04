@@ -1,0 +1,24 @@
+{
+  "name": "@magicpages/kalotyp-ghost-test",
+  "version": "0.0.0",
+  "private": true,
+  "description": "End-to-end harness: real Ghost instance + the Kalotyp build mounted via Settings → Integrations.",
+  "type": "module",
+  "scripts": {
+    "ghost:up": "docker compose up -d --wait",
+    "ghost:down": "docker compose down -v",
+    "ghost:logs": "docker compose logs -f ghost",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:axe": "playwright test --project=chromium --project=mobile-chromium tests/axe.spec.ts tests/keyboard-only.spec.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.0",
+    "@playwright/test": "1.48.2",
+    "@types/node": "^22.19.19",
+    "axe-core": "4.10.0",
+    "http-server": "14.1.1",
+    "typescript": "5.6.3"
+  }
+}

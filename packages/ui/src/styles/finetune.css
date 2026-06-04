@@ -1,0 +1,187 @@
+/* Phase 4 finetune plugin styles.
+ *
+ * Layout: a vertical list of six adjustment rows in `.kalotyp-util-main`,
+ * with a "Reset all" trailing button. Each row is one horizontal flex
+ * line:
+ *
+ *   [label  72px] [slider flex] [number 60px] [readout 36px] [reset]
+ *
+ * The list is the natural shape for six tone adjustments — every photo
+ * editor in the user's frame of reference (Lightroom, Snapseed, ACR,
+ * Apple Photos) renders adjustment sliders as a vertical stack so each
+ * label, slider, and value sit on the same horizontal line. Tries at a
+ * 3×2 grid felt cramped at the modal's width and forced the user's eye
+ * to scan diagonally between label and slider on different rows.
+ *
+ * Visuals reuse the rotate slider tokens for consistency — same
+ * thumb/track styling, same focus ring colour. The chrome colours
+ * (label muted, readout muted, reset border) all derive from
+ * `--color-foreground` so dark/light themes invert correctly. */
+
+.kalotyp-finetune-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: var(--kalotyp-text-size);
+}
+
+/* When the finetune panel is mounted the util-main slot has six rows of
+ * controls plus a trailing reset-all button. The standard 88 px floor
+ * doesn't fit; we override to a content-driven height while keeping
+ * the same vertical rhythm (centred horizontally, padded as the other
+ * panels). */
+.kalotyp-util-main:has(.kalotyp-finetune-panel) {
+  align-items: stretch;
+  justify-content: center;
+  padding-block: 16px;
+}
+
+.kalotyp-finetune-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+}
+
+.kalotyp-finetune-label {
+  flex: 0 0 auto;
+  width: 84px;
+  color: var(--kalotyp-muted);
+  font-size: var(--kalotyp-text-size);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* Slider — same look as the rotate slider so the editor reads as one
+ * coherent control library. The `flex: 1` lets the slider grow to use
+ * whatever horizontal space the row has after the fixed-width siblings
+ * are placed. */
+.kalotyp-finetune-slider {
+  flex: 1;
+  min-width: 160px;
+  height: 4px;
+  cursor: ew-resize;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.kalotyp-finetune-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--kalotyp-border);
+  border-radius: 999px;
+}
+.kalotyp-finetune-slider::-moz-range-track {
+  height: 4px;
+  background: var(--kalotyp-border);
+  border-radius: 999px;
+}
+.kalotyp-finetune-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  border: 2px solid rgb(var(--color-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: ew-resize;
+}
+.kalotyp-finetune-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  border: 2px solid rgb(var(--color-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: ew-resize;
+}
+.kalotyp-finetune-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+}
+.kalotyp-finetune-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 5px rgb(var(--color-foreground));
+}
+
+.kalotyp-finetune-input {
+  flex: 0 0 auto;
+  width: 60px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-finetune-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* Per-row reset: a circular-arrow glyph in a small ghost-button. The
+ * glyph rotates on hover/focus the same way the per-tab reset feels in
+ * Lightroom/Snapseed — a "this will revert" affordance the user
+ * recognises from other tools. */
+.kalotyp-finetune-row-reset {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-finetune-row-reset:hover {
+  border-color: var(--kalotyp-border-strong);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-finetune-row-reset:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* Bottom-of-panel reset-all button — text label, lives at the foot of
+ * the stacked rows. Clicking it commits one undo entry that returns
+ * every adjustment to 0. */
+.kalotyp-finetune-reset-all {
+  align-self: flex-end;
+  margin-top: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-finetune-reset-all:hover {
+  border-color: var(--kalotyp-border-strong);
+}
+
+.kalotyp-finetune-reset-all:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}

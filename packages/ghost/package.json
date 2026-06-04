@@ -1,0 +1,49 @@
+{
+  "name": "@magicpages/kalotyp-ghost",
+  "version": "0.0.0",
+  "description": "Ghost CMS adapter for Kalotyp — the open-source image editor for Ghost. Produces the kalotyp.js + kalotyp.css bundle Ghost loads.",
+  "license": "MIT",
+  "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",
+  "homepage": "https://github.com/magicpages/kalotyp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magicpages/kalotyp.git",
+    "directory": "packages/ghost"
+  },
+  "bugs": "https://github.com/magicpages/kalotyp/issues",
+  "keywords": ["ghost", "ghost-cms", "image-editor", "koenig"],
+  "type": "module",
+  "main": "./dist/kalotyp.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/kalotyp.js",
+  "jsdelivr": "./dist/kalotyp.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/kalotyp.js"
+    },
+    "./styles.css": "./dist/kalotyp.css"
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@magicpages/kalotyp-core": "workspace:*",
+    "@magicpages/kalotyp-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vite": "5.4.10",
+    "vitest": "2.1.5",
+    "jsdom": "25.0.1"
+  }
+}

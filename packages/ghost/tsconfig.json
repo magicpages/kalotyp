@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "types": ["vitest/globals"],
+    "paths": {
+      "@magicpages/kalotyp-core": ["../core/src/index.ts"],
+      "@magicpages/kalotyp-core/*": ["../core/src/*"],
+      "@magicpages/kalotyp-ui": ["../ui/src/index.ts"],
+      "@magicpages/kalotyp-ui/*": ["../ui/src/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

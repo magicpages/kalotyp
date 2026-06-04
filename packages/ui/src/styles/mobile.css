@@ -1,0 +1,379 @@
+@media (pointer: coarse) {
+  .kalotyp-button-close {
+    position: absolute;
+  }
+  .kalotyp-button-close::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .kalotyp-history-button {
+    position: relative;
+  }
+  .kalotyp-history-button::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .kalotyp-util-nav-button {
+    position: relative;
+  }
+  .kalotyp-util-nav-button::before {
+    content: "";
+    position: absolute;
+    inset: -8px -2px;
+  }
+
+  .kalotyp-handle[data-shape="circle"]::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    z-index: -1;
+  }
+
+  .kalotyp-handle[data-shape="edge"][data-direction="t"]::before,
+  .kalotyp-handle[data-shape="edge"][data-direction="b"]::before {
+    content: "";
+    position: absolute;
+    inset: -19px 0;
+    z-index: -1;
+  }
+  .kalotyp-handle[data-shape="edge"][data-direction="l"]::before,
+  .kalotyp-handle[data-shape="edge"][data-direction="r"]::before {
+    content: "";
+    position: absolute;
+    inset: 0 -19px;
+    z-index: -1;
+  }
+
+  /* Annotation selection handles (12×12 visible). 44×44 hit area. */
+  .kalotyp-annotate-handle::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+  }
+
+  /* Annotation tool buttons (32×32 visible). */
+  .kalotyp-annotate-tool {
+    position: relative;
+  }
+  .kalotyp-annotate-tool::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  /* Annotation color swatches — bump to 32×32 + ::before to 44×44. */
+  .kalotyp-annotate-swatch {
+    width: 32px;
+    height: 32px;
+    position: relative;
+  }
+  .kalotyp-annotate-swatch::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+  }
+
+  /* Native color picker button (28×28). 44×44 hit. */
+  .kalotyp-annotate-color {
+    position: relative;
+    width: 36px;
+    height: 36px;
+  }
+  .kalotyp-annotate-color::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
+  /* Bump to 40px + hit-area extension for WCAG 2.5.5. */
+  .kalotyp-preset-button {
+    height: 40px;
+    position: relative;
+  }
+  .kalotyp-preset-button::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+  }
+
+  /* Bump to 40px + hit-area extension for WCAG 2.5.5. */
+  .kalotyp-toggle-button,
+  .kalotyp-rotate-input,
+  .kalotyp-rotate-reset,
+  .kalotyp-quarter-button,
+  .kalotyp-resize-input,
+  .kalotyp-resize-lock {
+    height: 40px;
+    min-height: 40px;
+  }
+  .kalotyp-toggle-button::before,
+  .kalotyp-rotate-reset::before,
+  .kalotyp-quarter-button::before,
+  .kalotyp-resize-lock::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+  }
+  .kalotyp-toggle-button,
+  .kalotyp-rotate-reset,
+  .kalotyp-quarter-button,
+  .kalotyp-resize-lock {
+    position: relative;
+  }
+
+  .kalotyp-finetune-row-reset {
+    position: relative;
+  }
+  .kalotyp-finetune-row-reset::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+
+  .kalotyp-finetune-reset-all {
+    height: 36px;
+    position: relative;
+  }
+  .kalotyp-finetune-reset-all::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
+  .kalotyp-rotate-slider,
+  .kalotyp-finetune-slider,
+  .kalotyp-annotate-stroke {
+    height: 44px;
+  }
+
+  /* Webkit thumbs grow to 24×24; margin-top = -(thumbHeight - trackHeight) / 2 re-centres on the 4px track. */
+  .kalotyp-rotate-slider::-webkit-slider-thumb,
+  .kalotyp-finetune-slider::-webkit-slider-thumb,
+  .kalotyp-annotate-stroke::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -10px;
+  }
+  .kalotyp-rotate-slider::-moz-range-thumb,
+  .kalotyp-finetune-slider::-moz-range-thumb,
+  .kalotyp-annotate-stroke::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .kalotyp-button-export {
+    height: 44px;
+    padding: 0 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .kalotyp-main {
+    padding: 8px 8px 0 !important;
+    gap: 8px;
+  }
+
+  .kalotyp-nav-tools {
+    padding: 8px 8px 8px 12px;
+    gap: 8px;
+    min-height: 56px;
+    flex-wrap: nowrap;
+  }
+
+  /* min-width: 0 lets the flex item shrink below intrinsic width, enabling horizontal overflow. */
+  .kalotyp-util-nav {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 36px,
+      black calc(100% - 36px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 36px,
+      black calc(100% - 36px),
+      transparent 100%
+    );
+  }
+
+  .kalotyp-util-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kalotyp-util-nav-button {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .kalotyp-history-controls {
+    position: static !important;
+    flex: 0 0 auto;
+  }
+
+  .kalotyp-button-close {
+    position: static !important;
+    flex: 0 0 auto;
+  }
+
+  .kalotyp-nav-tools {
+    padding-right: 168px;
+  }
+
+  .kalotyp-button-close {
+    position: absolute !important;
+    top: 12px !important;
+    right: 8px !important;
+  }
+  .kalotyp-button-prefs {
+    position: absolute !important;
+    top: 12px !important;
+    right: 48px !important;
+  }
+  .kalotyp-history-controls {
+    position: absolute !important;
+    top: 12px !important;
+    right: 88px !important;
+  }
+
+  .kalotyp-util-main {
+    padding: 12px 12px;
+    min-height: 72px;
+  }
+
+  .kalotyp-util-footer {
+    padding: 10px 12px;
+  }
+
+  .pintura-editor .kalotyp-root > .kalotyp-nav-tools {
+    padding: 8px 100px 8px 12px !important;
+  }
+
+  .pintura-editor .kalotyp-root[data-env~="landscape"] .kalotyp-util-main,
+  .pintura-editor .kalotyp-root[data-env~="landscape"] .kalotyp-util-footer {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .kalotyp-rotate-slider {
+    min-width: 140px;
+  }
+  .kalotyp-rotate-slider-label {
+    min-width: auto;
+  }
+
+  /* Resize panel — let the W/H/scale rows wrap instead of crushing. */
+  .kalotyp-resize-panel {
+    align-items: stretch;
+    gap: 8px;
+  }
+  .kalotyp-resize-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .kalotyp-finetune-panel {
+    max-width: 100%;
+  }
+  .kalotyp-finetune-label {
+    width: 56px;
+    text-align: right;
+    font-size: 12px;
+  }
+  .kalotyp-finetune-slider {
+    min-width: 80px;
+  }
+  .kalotyp-finetune-input {
+    width: 56px;
+  }
+
+  /* Annotate toolbar — scroll horizontally on overflow. */
+  .kalotyp-annotate-toolbar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    max-width: 100%;
+  }
+  .kalotyp-annotate-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+  .kalotyp-annotate-tool {
+    flex: 0 0 auto;
+  }
+
+  /* Annotate style row — wrap swatches, picker, stroke, delete. */
+  .kalotyp-annotate-style-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .kalotyp-annotate-stroke {
+    min-width: 120px;
+  }
+
+  .kalotyp-filter-strip {
+    padding: 4px 8px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .kalotyp-util-nav {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .pintura-editor .kalotyp-root > .kalotyp-nav-tools,
+  .kalotyp-nav-tools {
+    padding-right: 92px !important;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .kalotyp-nav-tools {
+    min-height: 44px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .kalotyp-main {
+    padding: 6px 12px 0 !important;
+    gap: 6px;
+  }
+
+  .kalotyp-util-main {
+    min-height: 56px !important;
+    padding: 6px 12px;
+  }
+
+  .kalotyp-util-footer {
+    padding: 6px 12px;
+  }
+
+  .kalotyp-button-export {
+    /* Keep WCAG hit area but visually compress on landscape. */
+    height: 40px;
+    padding: 0 16px;
+  }
+
+  .kalotyp-button-close {
+    top: 6px !important;
+  }
+  .kalotyp-button-prefs {
+    top: 6px !important;
+  }
+  .kalotyp-history-controls {
+    top: 6px !important;
+  }
+}

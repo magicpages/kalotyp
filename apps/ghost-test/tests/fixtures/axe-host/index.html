@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kalotyp axe-core host</title>
+    <link rel="stylesheet" href="http://localhost:5174/kalotyp.css" />
+    <style>
+      body { margin: 0; min-height: 100vh; background: #fafafa; color: #18181b; font: 16px/1.5 system-ui, -apple-system, sans-serif; }
+      main { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+      button { font: inherit; padding: 8px 16px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Kalotyp accessibility host</h1>
+      <p>This page exists for the axe-core CI gate. It loads the same Kalotyp bundle Ghost loads, then exposes <code>window.openEditor()</code> so the spec can drive the editor through every plugin's panel and run axe-core on each surface.</p>
+      <button id="open">Open editor</button>
+    </main>
+    <script type="module">
+      // Match the Ghost loader: dynamic import() of the UMD bundle. The
+      // side-effect branch sets window.pintura.
+      const url = `${location.origin.replace(':5175', ':5174')}/kalotyp.js`;
+      await import(/* @vite-ignore */ url);
+      // A 1×1 transparent PNG embedded as a data URL — small enough
+      // to load instantly and free of network flakiness in CI.
+      const TEST_IMAGE_DATA_URL =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=';
+      window.openEditor = () => {
+        const editor = window.pintura.openDefaultEditor({
+          src: TEST_IMAGE_DATA_URL,
+          locale: { labelButtonExport: 'Save and close' },
+          enableTransparencyGrid: true,
+          util: 'crop',
+          utils: ['crop', 'filter', 'finetune', 'redact', 'annotate', 'trim', 'frame', 'resize'],
+          willClose: () => true,
+        });
+        return editor;
+      };
+      document.getElementById('open').addEventListener('click', () => window.openEditor());
+    </script>
+  </body>
+</html>

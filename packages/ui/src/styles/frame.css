@@ -1,0 +1,218 @@
+/* Phase 6.4 frame plugin styles.
+ *
+ * Layout: a horizontally-scrollable strip of preset thumbnails (six
+ * entries, matching Ghost's frameOptions order) plus a colour row
+ * below for the presets that accept colour customisation. The strip
+ * shape mirrors the filter plugin's strip exactly so a user who
+ * learned filters reads frame in one glance.
+ */
+
+.kalotyp-frame-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  font-size: var(--kalotyp-text-size);
+}
+
+.kalotyp-util-main:has(.kalotyp-frame-panel) {
+  align-items: stretch;
+  justify-content: center;
+  padding-block: 12px;
+}
+
+.kalotyp-frame-strip-wrap {
+  display: block;
+}
+
+.kalotyp-frame-strip {
+  display: flex;
+  gap: 12px;
+  padding: 4px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  justify-content: flex-start;
+}
+
+@media (min-width: 720px) {
+  .kalotyp-frame-strip {
+    justify-content: center;
+  }
+}
+
+.kalotyp-frame-thumb {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: rgb(var(--color-foreground));
+  border-radius: var(--kalotyp-radius);
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-frame-thumb:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-frame-thumb:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-frame-thumb-image {
+  display: block;
+  position: relative;
+  border: 2px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  overflow: hidden;
+  background: var(--kalotyp-track);
+  line-height: 0;
+  transition: var(--kalotyp-transition);
+  /* Reserve a fixed height so polaroid (taller than wide) doesn't
+   * change the strip's row height. The thumbnail canvas inside is
+   * letterboxed to fit. */
+  width: 80px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kalotyp-frame-thumb-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.kalotyp-frame-thumb-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  text-align: center;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+}
+
+.kalotyp-frame-thumb--active .kalotyp-frame-thumb-image {
+  border-color: rgb(var(--color-foreground));
+  box-shadow: 0 0 0 3px rgba(var(--color-foreground), 0.18);
+}
+
+.kalotyp-frame-thumb--active .kalotyp-frame-thumb-label {
+  color: rgb(var(--color-foreground));
+  font-weight: 600;
+}
+
+.kalotyp-frame-thumb-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.kalotyp-frame-thumb--active .kalotyp-frame-thumb-check {
+  display: inline-flex;
+}
+
+/* ----- Colour row ----- */
+
+.kalotyp-frame-color-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.kalotyp-frame-color-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-weight: 500;
+}
+
+/* Helper text shown when no preset is picked yet (Phase 6.6 polish).
+ * Hidden when colour customisation is available; takes a full row
+ * so it sits on its own line without crowding the picker controls. */
+.kalotyp-frame-color-hint {
+  flex: 1 1 100%;
+  text-align: center;
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-style: italic;
+}
+
+.kalotyp-frame-color-hint[hidden] {
+  display: none;
+}
+
+.kalotyp-frame-color {
+  width: 36px;
+  height: var(--kalotyp-control-height);
+  padding: 0;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  cursor: pointer;
+}
+
+.kalotyp-frame-color:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kalotyp-frame-hex {
+  width: 100px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.kalotyp-frame-hex:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kalotyp-frame-hex:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* ----- Preview canvas ----- */
+
+.kalotyp-frame-preview-container {
+  position: absolute;
+  inset: 0;
+}
+
+.kalotyp-frame-preview-canvas {
+  position: absolute;
+}

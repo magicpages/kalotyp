@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Dev/build dependencies. Nothing ships at runtime (the published bundle has
+  # zero runtime deps), so these are all tooling — group minor+patch into one
+  # weekly PR to keep the noise low for a maintenance-mode repo.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        update-types:
+          - minor
+          - patch
+
+  # Keep the pinned GitHub Actions SHAs current (security patches land here).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        update-types:
+          - minor
+          - patch

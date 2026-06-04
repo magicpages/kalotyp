@@ -1,0 +1,147 @@
+/* Phase 5 filter plugin styles.
+ *
+ * Layout: a horizontally-scrollable strip of preset thumbnails inside
+ * the util-main slot. Each thumbnail is a small canvas of the user's
+ * actual upstream-baked source under that preset's tone math, plus
+ * the preset's name underneath. Active state is a border-and-glow
+ * around the selected thumbnail; clicking the active thumbnail
+ * deselects (returns to None) per
+ *
+ * Visuals reuse the same chrome tokens as the finetune panel — same
+ * border colour, same radius, same focus ring. The strip is the
+ * dominant visual element on the filter tab; everything else
+ * deliberately fades. */
+
+.kalotyp-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  font-size: var(--kalotyp-text-size);
+}
+
+/* The util-main slot's standard 88 px floor doesn't fit the strip's
+ * thumbnail-plus-label height. Override to a content-driven height,
+ * keeping the same vertical rhythm as the other panels. */
+.kalotyp-util-main:has(.kalotyp-filter-panel) {
+  align-items: stretch;
+  justify-content: center;
+  padding-block: 12px;
+}
+
+.kalotyp-filter-strip {
+  display: flex;
+  gap: 12px;
+  padding: 4px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  /* Centre the row on wider modals; allow horizontal scroll on narrow
+   * ones. `min-content` plus `justify-content: center` only kicks in
+   * when the strip's intrinsic width is less than the container's. */
+  justify-content: flex-start;
+}
+
+@media (min-width: 720px) {
+  .kalotyp-filter-strip {
+    justify-content: center;
+  }
+}
+
+.kalotyp-filter-thumb {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: rgb(var(--color-foreground));
+  border-radius: var(--kalotyp-radius);
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-filter-thumb:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-filter-thumb:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+/* The thumbnail image wrapper has the canvas inside it. The wrapper
+ * is the bordered/highlighted element so the selection ring sits
+ * around the *image*, not around the whole button (label + image). */
+.kalotyp-filter-thumb-image {
+  display: block;
+  border: 2px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  overflow: hidden;
+  background: var(--kalotyp-track);
+  line-height: 0;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-filter-thumb-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kalotyp-filter-thumb-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  text-align: center;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  /* Reserve a single-line slot so the strip's row height doesn't
+   * jitter when label widths differ between presets. */
+  min-height: 14px;
+}
+
+.kalotyp-filter-thumb--active .kalotyp-filter-thumb-image {
+  border-color: rgb(var(--color-foreground));
+  box-shadow: 0 0 0 3px rgba(var(--color-foreground), 0.18);
+}
+
+.kalotyp-filter-thumb--active .kalotyp-filter-thumb-label {
+  color: rgb(var(--color-foreground));
+  font-weight: 600;
+}
+
+/* Active-state checkmark badge. the no-color-only-signaling
+ * rule: every "selected" affordance pairs the colour change with a
+ * structural marker (a checkmark in a high-contrast pill). Hidden by
+ * default; shown when the parent thumb is the active preset. */
+.kalotyp-filter-thumb-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.kalotyp-filter-thumb-image {
+  position: relative;
+}
+
+.kalotyp-filter-thumb--active .kalotyp-filter-thumb-check {
+  display: inline-flex;
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@magicpages/kalotyp-core",
+  "version": "0.0.0",
+  "description": "Framework-agnostic editor engine for Kalotyp — an open-source image editor for Ghost CMS.",
+  "license": "MIT",
+  "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",
+  "homepage": "https://github.com/magicpages/kalotyp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magicpages/kalotyp.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/magicpages/kalotyp/issues",
+  "keywords": ["ghost", "image-editor", "canvas", "editor-engine"],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vite": "5.4.10",
+    "vite-plugin-dts": "4.3.0",
+    "vitest": "2.1.5",
+    "jsdom": "25.0.1"
+  }
+}

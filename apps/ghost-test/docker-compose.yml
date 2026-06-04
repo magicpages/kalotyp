@@ -1,0 +1,23 @@
+# Phase 0 scaffold — DO NOT use without reviewing the open questions in
+# README.md (Ghost version, admin seeding, image fixture). The version pin
+# below is a placeholder and will be revisited.
+services:
+  ghost:
+    image: ghost:5-alpine
+    container_name: kalotyp-ghost-test
+    environment:
+      url: http://localhost:2368
+      database__client: sqlite3
+      database__connection__filename: /var/lib/ghost/content/data/ghost.db
+      database__useNullAsDefault: "true"
+      NODE_ENV: development
+    ports:
+      - "2368:2368"
+    volumes:
+      - ./.ghost-data:/var/lib/ghost/content
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:2368/ghost/api/admin/site/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s

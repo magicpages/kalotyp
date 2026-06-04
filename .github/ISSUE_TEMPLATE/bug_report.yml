@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in the editor doesn't work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the editor with …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Kalotyp version
+      description: The `@magicpages/kalotyp` version (or the CDN URL you loaded).
+    validations:
+      required: true
+  - type: input
+    id: ghost-version
+    attributes:
+      label: Ghost version
+      description: If reproduced inside Ghost, which Ghost admin version?
+  - type: input
+    id: env
+    attributes:
+      label: Browser / OS
+      placeholder: e.g. Firefox 128 on macOS 15
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Any errors in the browser console (will be rendered as code).
+      render: shell

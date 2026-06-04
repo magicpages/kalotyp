@@ -1,0 +1,180 @@
+/* Output popover (Save-button caret). Three rows: format dropdown,
+ * quality slider with inline readout, then a summary line + a
+ * metadata-stripping note. The popover is narrow (240–280 px) and
+ * anchored above the Save button.
+ */
+
+.kalotyp-nested-overlay--popover .kalotyp-nested-surface.kalotyp-output-popover {
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.kalotyp-output-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kalotyp-output-row {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.kalotyp-output-row-label {
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+  font-weight: 500;
+}
+
+.kalotyp-output-format {
+  height: var(--kalotyp-control-height);
+  padding: 0 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+}
+
+.kalotyp-output-format:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-output-quality {
+  /* The slider gets full track width via the grid column */
+  width: 100%;
+  accent-color: rgb(var(--color-foreground));
+}
+
+.kalotyp-output-quality:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+  border-radius: var(--kalotyp-radius);
+}
+
+.kalotyp-output-quality-readout {
+  font-size: var(--kalotyp-text-size);
+  color: var(--kalotyp-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+.kalotyp-output-hint {
+  margin: 0 0 4px 74px; /* align under the format dropdown */
+  font-size: 12px;
+  color: var(--kalotyp-muted);
+}
+
+.kalotyp-output-summary {
+  margin: 4px 0 0;
+  font-size: var(--kalotyp-text-size);
+  color: rgb(var(--color-foreground));
+  font-weight: 500;
+}
+
+/* Strip-metadata checkbox row. The label wraps the input + text so
+ * clicks on either land on the input. The hint paragraph below it
+ * surfaces format-dependent constraints (EXIF preservation only
+ * works for JPEG → JPEG). */
+.kalotyp-output-metadata-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+}
+
+.kalotyp-output-metadata-checkbox {
+  accent-color: rgb(var(--color-foreground));
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.kalotyp-output-metadata-text {
+  line-height: 1.3;
+}
+
+.kalotyp-output-metadata-hint {
+  margin: 2px 0 0;
+  padding-left: 24px;
+  font-size: 11px;
+  color: var(--kalotyp-muted);
+  font-style: italic;
+  line-height: 1.4;
+  /* Stays in flow so the popover sizes correctly when empty. */
+  min-height: 16px;
+}
+
+/* Footer with Done (close) and Save and close (commit) buttons.
+ * Done is secondary chrome (transparent border, muted text); Save is
+ * the same primary fill as the main Save button so the user sees them
+ * as the same action. */
+.kalotyp-output-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kalotyp-border);
+}
+
+.kalotyp-output-done {
+  height: var(--kalotyp-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-output-done:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-output-done:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-output-save {
+  height: var(--kalotyp-control-height);
+  padding: 0 16px;
+  border: 1px solid rgb(var(--color-foreground));
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-output-save:hover {
+  background: rgba(var(--color-foreground), 0.88);
+  border-color: rgba(var(--color-foreground), 0.88);
+}
+
+.kalotyp-output-save:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-output-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

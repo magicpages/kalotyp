@@ -1,0 +1,93 @@
+/* Preferences modal — a centred nested modal with two sections
+ * (Output defaults, Remember toggles) and a footer with Reset + Done.
+ */
+
+.kalotyp-nested-overlay--modal .kalotyp-nested-surface.kalotyp-preferences-modal {
+  min-width: 360px;
+  max-width: 460px;
+}
+
+.kalotyp-preferences-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kalotyp-preferences-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kalotyp-preferences-section h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--kalotyp-muted);
+}
+
+.kalotyp-preferences-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+}
+
+.kalotyp-preferences-toggle input[type="checkbox"] {
+  accent-color: rgb(var(--color-foreground));
+  width: 16px;
+  height: 16px;
+}
+
+.kalotyp-preferences-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kalotyp-border);
+}
+
+.kalotyp-preferences-reset {
+  height: var(--kalotyp-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: transparent;
+  color: var(--kalotyp-muted);
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+}
+
+.kalotyp-preferences-reset:hover {
+  background: var(--kalotyp-soft);
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-preferences-done {
+  height: var(--kalotyp-control-height);
+  padding: 0 16px;
+  border: 1px solid rgb(var(--color-foreground));
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kalotyp-preferences-done:hover {
+  background: rgba(var(--color-foreground), 0.88);
+}
+
+.kalotyp-preferences-done:focus-visible,
+.kalotyp-preferences-reset:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}

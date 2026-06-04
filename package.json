@@ -1,0 +1,39 @@
+{
+  "name": "kalotyp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open-source image editor for Ghost CMS.",
+  "license": "MIT",
+  "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magicpages/kalotyp.git"
+  },
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm --filter @magicpages/kalotyp-core --filter @magicpages/kalotyp-ui --filter @magicpages/kalotyp build",
+    "dev": "pnpm --filter @magicpages/kalotyp-playground dev",
+    "test": "pnpm --filter @magicpages/kalotyp-core --filter @magicpages/kalotyp-ui --filter @magicpages/kalotyp test",
+    "test:e2e": "pnpm --filter @magicpages/kalotyp-ghost-test test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "size": "node ./scripts/check-bundle-size.mjs",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@changesets/cli": "2.27.11",
+    "typescript": "5.6.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+  }
+}

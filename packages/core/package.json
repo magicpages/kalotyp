@@ -1,6 +1,6 @@
 {
   "name": "@magicpages/kalotyp-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Framework-agnostic editor engine for Kalotyp — an open-source image editor for Ghost CMS.",
   "license": "MIT",
   "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",

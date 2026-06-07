@@ -3,11 +3,28 @@ import {
   ALL_SELECTION_HANDLES,
   alignToOrigin,
   boundingBoxOf,
-  estimateTextSize,
   rectFromHandleDrag,
   selectionHandlePositions,
 } from './geometry.js';
 import type { ArrowShape, FreehandShape, RectShape, TextShape } from './state.js';
+import { TEXT_LINE_HEIGHT } from './text-layout.js';
+
+function makeText(overrides: Partial<TextShape>): TextShape {
+  return {
+    id: 't',
+    kind: 'text',
+    x: 100,
+    y: 50,
+    text: '',
+    fontSize: 20,
+    color: '#000',
+    textAlign: 'left',
+    fontFamily: 'system',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    ...overrides,
+  };
+}
 
 describe('boundingBoxOf', () => {
   it('returns the rect for a rect shape', () => {
@@ -70,21 +87,38 @@ describe('boundingBoxOf', () => {
     ).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
 
-  it('aligns text bounding box to the textAlign origin', () => {
-    const text: TextShape = {
-      id: 't',
-      kind: 'text',
-      x: 100,
-      y: 50,
-      text: 'centred',
-      fontSize: 20,
-      color: '#000',
-      textAlign: 'center',
-    };
+  it('measures the natural text extent and a single-line height for short text', () => {
+    const text = makeText({ x: 100, y: 50, text: 'short', fontSize: 20, textAlign: 'left' });
     const box = boundingBoxOf(text);
-    const { width } = estimateTextSize('centred', 20);
-    expect(box.x).toBeCloseTo(100 - width / 2);
+    // Left-aligned: box left edge is the anchor.
+    expect(box.x).toBe(100);
     expect(box.y).toBe(50);
+    expect(box.width).toBeGreaterThan(0);
+    // One line: fontSize * line-height.
+    expect(box.height).toBeCloseTo(20 * TEXT_LINE_HEIGHT);
+  });
+
+  it('shifts the bounding-box origin by alignment', () => {
+    const left = boundingBoxOf(makeText({ text: 'hello', textAlign: 'left' }));
+    const centre = boundingBoxOf(makeText({ text: 'hello', textAlign: 'center' }));
+    const right = boundingBoxOf(makeText({ text: 'hello', textAlign: 'right' }));
+    // Same width; the origin moves left for centre/right per alignToOrigin.
+    expect(centre.x).toBeCloseTo(left.x - left.width / 2);
+    expect(right.x).toBeCloseTo(left.x - left.width);
+  });
+
+  it('grows height with explicit line breaks', () => {
+    const oneLine = boundingBoxOf(makeText({ text: 'a' }));
+    const twoLines = boundingBoxOf(makeText({ text: 'a\nb' }));
+    expect(twoLines.height).toBeCloseTo(oneLine.height * 2);
+  });
+});
+
+describe('alignToOrigin', () => {
+  it('returns the anchor for left, shifts for centre/right', () => {
+    expect(alignToOrigin(100, 80, 'left')).toBe(100);
+    expect(alignToOrigin(100, 80, 'center')).toBe(60);
+    expect(alignToOrigin(100, 80, 'right')).toBe(20);
   });
 });
 
@@ -145,17 +179,5 @@ describe('rectFromHandleDrag', () => {
     const out = rectFromHandleDrag(initial, 'br', { x: 50, y: 200 });
     expect(out.width).toBe(-50);
     expect(out.height).toBe(100);
-  });
-});
-
-describe('alignToOrigin', () => {
-  it('returns the anchor for left-align', () => {
-    expect(alignToOrigin(100, 80, 'left')).toBe(100);
-  });
-  it('shifts left by half the width for centre', () => {
-    expect(alignToOrigin(100, 80, 'center')).toBe(60);
-  });
-  it('shifts left by the full width for right', () => {
-    expect(alignToOrigin(100, 80, 'right')).toBe(20);
   });
 });

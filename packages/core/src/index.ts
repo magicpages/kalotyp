@@ -76,13 +76,19 @@ export {
   type AnnotateBakeInput,
   bakeAnnotate,
   paintShape,
-  SYSTEM_FONT_STACK,
 } from './plugins/annotate/bake.js';
+export {
+  cssFontString,
+  type FontDef,
+  fontDefFor,
+  fontStackFor,
+  SYSTEM_FONT_STACK,
+  TEXT_FONTS,
+} from './plugins/annotate/fonts.js';
 export {
   ALL_SELECTION_HANDLES,
   alignToOrigin,
   boundingBoxOf,
-  estimateTextSize,
   rectFromHandleDrag,
   type SelectionHandle,
   selectionHandlePositions,
@@ -105,6 +111,7 @@ export {
   assertNever,
   type CreateCenteredShapeContext,
   createCenteredShape,
+  DEFAULT_FONT_KEY,
   DEFAULT_PALETTE_COLOR,
   DEFAULT_STROKE_WIDTH,
   defaultStylePalette,
@@ -124,6 +131,7 @@ export {
   mintShapeId,
   mirrorShape,
   normaliseRectExtent,
+  normalizeTextShape,
   type RectShape,
   replaceShape,
   rotateShape,
@@ -134,10 +142,21 @@ export {
   setActiveTool,
   setStyle,
   TEXT_DEFAULT_FONT_SIZE,
+  type TextAlign,
+  type TextFontStyle,
+  type TextFontWeight,
   type TextShape,
   transformShapes,
   translateShape,
 } from './plugins/annotate/state.js';
+export {
+  estimateLineWidth,
+  layoutTextLines,
+  type MeasureLine,
+  TEXT_LINE_HEIGHT,
+  type TextLayout,
+  textLines,
+} from './plugins/annotate/text-layout.js';
 export {
   type AspectAnchor,
   applyAspectRatio,

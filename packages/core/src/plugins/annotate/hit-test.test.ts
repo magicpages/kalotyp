@@ -166,8 +166,11 @@ describe('hitTest — text', () => {
     fontSize: 32,
     color: '#000',
     textAlign: 'left',
+    fontFamily: 'system',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
   };
-  it('picks within the bounding box estimate', () => {
+  it('picks within the text bounding box', () => {
     expect(hitTest(text, { x: 130, y: 110 })).toBe(true);
   });
   it('rejects outside the box', () => {

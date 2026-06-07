@@ -5,8 +5,8 @@
  * annotation's image-space anchor. Using a `<div>` instead of a
  * `<textarea>` lets us match the canvas-side font and size precisely
  * (textareas restrict the visible padding/size combination on some
- * browsers). The element keeps a fixed width by default and grows
- * vertically with line breaks.
+ * browsers). The element auto-sizes to its content and grows with the
+ * text the user types (line breaks via Shift+Enter).
  *
  * Lifecycle:
  *   - `open(shape, viewport)`: position the editor over the shape,
@@ -20,8 +20,8 @@
  */
 
 import {
+  cssFontString,
   type SourceImage,
-  SYSTEM_FONT_STACK,
   type TextShape,
   type Viewport,
 } from '@magicpages/kalotyp-core';
@@ -97,15 +97,17 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
       editor.style.left = `${left}px`;
       editor.style.top = `${top}px`;
       editor.style.color = shape.color;
-      editor.style.font = `${shape.fontSize * viewport.scale}px ${SYSTEM_FONT_STACK}`;
+      // Match the canvas font exactly (family/weight/style/size), scaled to
+      // the current zoom, so the editor is WYSIWYG with the baked output.
+      editor.style.font = cssFontString(shape, viewport.scale);
       editor.style.textAlign = shape.textAlign;
-      // Align the editor's anchor to the shape's anchor for the
-      // current `textAlign` so typing grows the box outward in the
-      // same direction the rendered text would.
+      // Anchor the editor's growth to the shape's anchor for the current
+      // alignment, so typing extends the text in the same direction the
+      // canvas would render it.
       editor.style.transformOrigin = transformOriginFor(shape.textAlign);
-      // Constrain width so the user has room to type without the
-      // editor sliding off the stage. The displayRect.width is the
-      // image's painted width in CSS pixels.
+      // Auto-size to content (no wrap box). Cap the width so a long line can't
+      // slide off the stage; the editor grows rightward/down as the user types.
+      editor.style.width = 'max-content';
       const maxWidth = Math.max(
         100,
         viewport.displayRect.x + viewport.displayRect.width - left - 8,

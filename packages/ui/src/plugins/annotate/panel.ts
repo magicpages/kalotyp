@@ -9,6 +9,8 @@ import {
   type AnnotateTool,
   isKeyboardPlaceableKind,
   type StylePalette,
+  TEXT_FONTS,
+  type TextAlign,
 } from '@magicpages/kalotyp-core';
 import { icon } from '../../icons.js';
 
@@ -25,6 +27,11 @@ export interface AnnotatePanelOptions {
   onSelectTool(tool: AnnotateTool): void;
   onColorChange(color: string): void;
   onStrokeWidthChange(width: number): void;
+  onFontFamilyChange(fontFamily: string): void;
+  onFontSizeChange(fontSize: number): void;
+  onToggleBold(): void;
+  onToggleItalic(): void;
+  onAlignChange(align: TextAlign): void;
   onDeleteSelected(): void;
   /**
    * Insert the active drawing tool's default shape at image centre
@@ -41,11 +48,18 @@ export interface AnnotatePanel {
   readonly hexInput: HTMLInputElement;
   readonly colorSwatches: ReadonlyArray<HTMLButtonElement>;
   readonly strokeRange: HTMLInputElement;
+  readonly fontSelect: HTMLSelectElement;
+  readonly fontSizeInput: HTMLInputElement;
+  readonly boldButton: HTMLButtonElement;
+  readonly italicButton: HTMLButtonElement;
+  readonly alignButtons: ReadonlyMap<TextAlign, HTMLButtonElement>;
   readonly deleteButton: HTMLButtonElement;
   readonly insertButton: HTMLButtonElement;
   setActiveTool(tool: AnnotateTool): void;
   setStyle(style: StylePalette): void;
   setCanDelete(canDelete: boolean): void;
+  /** Show the text controls (and the stroke Width control) per the active tool / selection. */
+  setTextControlsVisible(showText: boolean): void;
 }
 
 /**
@@ -169,6 +183,11 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
     }
   });
 
+  // Stroke "Width" control, wrapped so it can be hidden for text (text has no
+  // stroke; its size is the font-size stepper in the text row).
+  const strokeWrap = document.createElement('span');
+  strokeWrap.className = 'kalotyp-annotate-stroke-wrap';
+
   const strokeLabel = document.createElement('label');
   strokeLabel.className = 'kalotyp-annotate-stroke-label';
   strokeLabel.textContent = 'Width';
@@ -184,6 +203,8 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
   strokeRange.addEventListener('change', () =>
     options.onStrokeWidthChange(strokeRange.valueAsNumber),
   );
+  strokeLabel.appendChild(strokeRange);
+  strokeWrap.appendChild(strokeLabel);
 
   const deleteButton = document.createElement('button');
   deleteButton.type = 'button';
@@ -211,13 +232,101 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
 
   styleRow.appendChild(swatchGroup);
   styleRow.appendChild(hexInput);
-  styleRow.appendChild(strokeLabel);
-  styleRow.appendChild(strokeRange);
+  styleRow.appendChild(strokeWrap);
   styleRow.appendChild(insertButton);
   styleRow.appendChild(deleteButton);
 
+  // ----- Text controls (font family / size / bold / italic / align) -----
+  const textRow = document.createElement('div');
+  textRow.className = 'kalotyp-annotate-text-row';
+  textRow.style.display = 'none';
+
+  const fontSelect = document.createElement('select');
+  fontSelect.className = 'kalotyp-annotate-font';
+  fontSelect.setAttribute('aria-label', 'Font');
+  for (const font of TEXT_FONTS) {
+    const option = document.createElement('option');
+    option.value = font.key;
+    option.textContent = font.label;
+    fontSelect.appendChild(option);
+  }
+  fontSelect.value = options.initialStyle.fontFamily;
+  fontSelect.addEventListener('change', () => options.onFontFamilyChange(fontSelect.value));
+
+  const fontSizeInput = document.createElement('input');
+  fontSizeInput.type = 'number';
+  fontSizeInput.className = 'kalotyp-annotate-font-size';
+  fontSizeInput.min = '8';
+  fontSizeInput.max = '400';
+  fontSizeInput.step = '1';
+  fontSizeInput.value = String(options.initialStyle.fontSize);
+  fontSizeInput.setAttribute('aria-label', 'Font size');
+  fontSizeInput.addEventListener('change', () => {
+    const value = Math.round(fontSizeInput.valueAsNumber);
+    if (Number.isFinite(value) && value >= 8) options.onFontSizeChange(value);
+    else fontSizeInput.value = String(options.initialStyle.fontSize);
+  });
+
+  const boldButton = document.createElement('button');
+  boldButton.type = 'button';
+  boldButton.className = 'kalotyp-annotate-text-toggle';
+  boldButton.innerHTML = icon('bold');
+  boldButton.setAttribute('aria-label', 'Bold');
+  boldButton.title = 'Bold';
+  boldButton.setAttribute(
+    'aria-pressed',
+    options.initialStyle.fontWeight === 'bold' ? 'true' : 'false',
+  );
+  boldButton.addEventListener('click', () => options.onToggleBold());
+
+  const italicButton = document.createElement('button');
+  italicButton.type = 'button';
+  italicButton.className = 'kalotyp-annotate-text-toggle';
+  italicButton.innerHTML = icon('italic');
+  italicButton.setAttribute('aria-label', 'Italic');
+  italicButton.title = 'Italic';
+  italicButton.setAttribute(
+    'aria-pressed',
+    options.initialStyle.fontStyle === 'italic' ? 'true' : 'false',
+  );
+  italicButton.addEventListener('click', () => options.onToggleItalic());
+
+  const alignGroup = document.createElement('div');
+  alignGroup.className = 'kalotyp-annotate-align';
+  alignGroup.setAttribute('role', 'radiogroup');
+  alignGroup.setAttribute('aria-label', 'Text alignment');
+  const alignButtons = new Map<TextAlign, HTMLButtonElement>();
+  const ALIGN_DEFS: ReadonlyArray<{ id: TextAlign; label: string; icon: string }> = [
+    { id: 'left', label: 'Align left', icon: icon('alignLeft') },
+    { id: 'center', label: 'Align center', icon: icon('alignCenter') },
+    { id: 'right', label: 'Align right', icon: icon('alignRight') },
+  ];
+  for (const def of ALIGN_DEFS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'kalotyp-annotate-align-button';
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-label', def.label);
+    button.title = def.label;
+    button.innerHTML = def.icon;
+    button.setAttribute(
+      'aria-checked',
+      def.id === options.initialStyle.textAlign ? 'true' : 'false',
+    );
+    button.addEventListener('click', () => options.onAlignChange(def.id));
+    alignGroup.appendChild(button);
+    alignButtons.set(def.id, button);
+  }
+
+  textRow.appendChild(fontSelect);
+  textRow.appendChild(fontSizeInput);
+  textRow.appendChild(boldButton);
+  textRow.appendChild(italicButton);
+  textRow.appendChild(alignGroup);
+
   container.appendChild(toolbar);
   container.appendChild(styleRow);
+  container.appendChild(textRow);
   // Coordinate-input slot. The mount layer
   // appends the inputs into this slot after constructing the panel,
   // so the panel doesn't need to know per-shape geometry. The slot
@@ -244,10 +353,28 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
       const matches = swatch.dataset.color?.toLowerCase() === style.color.toLowerCase();
       swatch.setAttribute('aria-checked', matches ? 'true' : 'false');
     }
+    // Text controls reflect the same palette (current style for new shapes, or
+    // the selected text shape's attributes, both threaded through here).
+    if (fontSelect.value !== style.fontFamily) fontSelect.value = style.fontFamily;
+    if (Math.round(fontSizeInput.valueAsNumber) !== style.fontSize) {
+      fontSizeInput.value = String(style.fontSize);
+    }
+    boldButton.setAttribute('aria-pressed', style.fontWeight === 'bold' ? 'true' : 'false');
+    italicButton.setAttribute('aria-pressed', style.fontStyle === 'italic' ? 'true' : 'false');
+    for (const [id, button] of alignButtons) {
+      button.setAttribute('aria-checked', id === style.textAlign ? 'true' : 'false');
+    }
   }
 
   function setCanDelete(canDelete: boolean): void {
     deleteButton.disabled = !canDelete;
+  }
+
+  function setTextControlsVisible(showText: boolean): void {
+    textRow.style.display = showText ? '' : 'none';
+    // The stroke Width control is meaningless for text; swap it out so the
+    // text row owns sizing while text is in play.
+    strokeWrap.style.display = showText ? 'none' : '';
   }
 
   setStyle(options.initialStyle);
@@ -258,11 +385,17 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
     hexInput,
     colorSwatches: swatches,
     strokeRange,
+    fontSelect,
+    fontSizeInput,
+    boldButton,
+    italicButton,
+    alignButtons,
     deleteButton,
     insertButton,
     setActiveTool,
     setStyle,
     setCanDelete,
+    setTextControlsVisible,
   };
 }
 

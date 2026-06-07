@@ -200,6 +200,99 @@
   justify-content: center;
 }
 
+/* ----- Text controls row (font / size / bold / italic / align) ----- */
+.kalotyp-annotate-text-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kalotyp-annotate-font {
+  height: var(--kalotyp-control-height);
+  padding: 0 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+}
+
+.kalotyp-annotate-font:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-font-size {
+  width: 64px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-annotate-font-size:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-text-toggle,
+.kalotyp-annotate-align-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: var(--kalotyp-control-height);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kalotyp-muted);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-annotate-text-toggle svg,
+.kalotyp-annotate-align-button svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.kalotyp-annotate-text-toggle:hover,
+.kalotyp-annotate-align-button:hover {
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-annotate-text-toggle:focus-visible,
+.kalotyp-annotate-align-button:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-text-toggle[aria-pressed="true"],
+.kalotyp-annotate-align-button[aria-checked="true"] {
+  background: rgb(var(--color-background));
+  border-color: var(--kalotyp-border);
+  color: rgb(var(--color-foreground));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.kalotyp-annotate-align {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .kalotyp-annotate-swatches {
   display: inline-flex;
   align-items: center;

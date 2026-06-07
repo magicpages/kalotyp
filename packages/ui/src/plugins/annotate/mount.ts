@@ -43,6 +43,7 @@ import {
   type ViewportController,
 } from '@magicpages/kalotyp-core';
 import { buildCoordInputs } from './coord-inputs.js';
+import { ensureAnnotateFontsLoaded } from './fonts-loader.js';
 import { type AnnotatePanel, buildAnnotatePanel } from './panel.js';
 import { attachPointerDrag, clientToElement, type DragHandlers } from './pointer-drag.js';
 import { paintImageLayer, paintLiveLayer, paintMarqueeLayer, paintShapesLayer } from './render.js';
@@ -112,7 +113,13 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     paintImageLayer(stage.imageCanvas, source, rect.width, rect.height, viewport);
     paintShapesLayer(stage.shapesCanvas, store.get().shapes, rect.width, rect.height, viewport);
     paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport);
-    selectionLayer.update(selectedShapeOf(store.get()), viewport);
+    selectionLayer.update(shapeForHandles(store.get()), viewport);
+  }
+
+  /** The selected shape to draw handles for, or `null` while the text editor is open. */
+  function shapeForHandles(state: AnnotateState): Shape | null {
+    if (isEditingText) return null;
+    return selectedShapeOf(state);
   }
 
   function paintShapes(): void {
@@ -168,6 +175,10 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   });
 
   // ----- Inline text editor -----
+  // True while the inline editor is open. The selection handles are suppressed
+  // during editing so the user sees one box (the editor), not the editor plus
+  // the handle frame stacked on top.
+  let isEditingText = false;
   const textEditor = buildTextEditor({
     host: stage.textOverlay,
     onInput: (text) => {
@@ -177,6 +188,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     },
     onCommit: () => {
       const selected = selectedShapeOf(store.get());
+      isEditingText = false;
       textEditor.close();
       // Drop the text shape entirely if the user committed an empty
       // string — a blank text shape has no representation.
@@ -190,6 +202,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     },
     onCancel: () => {
       const selected = selectedShapeOf(store.get());
+      isEditingText = false;
       textEditor.close();
       // If the user cancelled an empty text (the click that created
       // it), drop the shape so we don't pollute the list.
@@ -286,6 +299,17 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   function startTextGesture(event: PointerEvent): void {
     const state = store.get();
     const image = toImageSpace(event);
+    // Clicking an existing text box re-opens its editor instead of spawning a
+    // new one — so the text tool both creates and edits, and a click never
+    // stacks a second box on top of an existing one.
+    const picked = pickShape(state.shapes, image);
+    if (picked?.kind === 'text') {
+      if (state.selectedId !== picked.id) {
+        store.update((current) => selectShape(current, picked.id));
+      }
+      openTextEditor(picked);
+      return;
+    }
     const { id, nextShapeNumber } = mintShapeId(state);
     const shape: TextShape = {
       id,
@@ -295,11 +319,24 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       text: '',
       fontSize: state.currentStyle.fontSize ?? TEXT_DEFAULT_FONT_SIZE,
       color: state.currentStyle.color,
-      textAlign: 'left',
+      textAlign: state.currentStyle.textAlign,
+      fontFamily: state.currentStyle.fontFamily,
+      fontWeight: state.currentStyle.fontWeight,
+      fontStyle: state.currentStyle.fontStyle,
     };
     store.update((current) => ({ ...addShape(current, shape), nextShapeNumber }));
     // The shape is selected by `addShape`; open the editor on it.
+    openTextEditor(shape);
+  }
+
+  /**
+   * Open the inline editor on a text shape and suppress the selection handles
+   * while editing, so only the editor box shows (not the handle frame too).
+   */
+  function openTextEditor(shape: TextShape): void {
+    isEditingText = true;
     textEditor.open(shape, viewport, source);
+    selectionLayer.update(null, viewport);
   }
 
   /**
@@ -327,7 +364,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       // Open the inline editor immediately so the user can start
       // typing. Without this the user would have to find another
       // affordance to enter the text — defeats the point.
-      textEditor.open(shape, viewport, source);
+      openTextEditor(shape);
       announce('Text annotation placed at centre. Type to enter text.');
       return;
     }
@@ -347,6 +384,59 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       firstInput?.focus();
       firstInput?.select();
     });
+  }
+
+  /** The selected shape if it's a text shape, else `undefined`. */
+  function selectedTextShape(): TextShape | undefined {
+    const selected = selectedShapeOf(store.get());
+    return selected?.kind === 'text' ? selected : undefined;
+  }
+
+  /**
+   * Show the text controls when the text tool is active or a text shape is
+   * selected. When a text shape is selected, the controls reflect that shape's
+   * attributes; otherwise they reflect the current style for new text.
+   */
+  function syncTextControls(state: AnnotateState): void {
+    const selectedText = state.selectedId
+      ? state.shapes.find((s) => s.id === state.selectedId && s.kind === 'text')
+      : undefined;
+    const showText = state.activeTool === 'text' || selectedText !== undefined;
+    panel.setTextControlsVisible(showText);
+    if (selectedText && selectedText.kind === 'text') {
+      panel.setStyle({
+        ...state.currentStyle,
+        fontFamily: selectedText.fontFamily,
+        fontSize: selectedText.fontSize,
+        fontWeight: selectedText.fontWeight,
+        fontStyle: selectedText.fontStyle,
+        textAlign: selectedText.textAlign,
+        color: selectedText.color,
+      });
+    } else {
+      panel.setStyle(state.currentStyle);
+    }
+  }
+
+  /**
+   * Apply a text-attribute change to the panel's `currentStyle` (so the next
+   * new text inherits it) and, if a text shape is selected, to that shape.
+   * Mirrors the color/stroke flow.
+   */
+  function applyTextStyle(
+    partial: Partial<
+      Pick<TextShape, 'fontFamily' | 'fontSize' | 'fontWeight' | 'fontStyle' | 'textAlign'>
+    >,
+  ): void {
+    store.update((current) => {
+      let next = setStyle(current, partial);
+      const selected = selectedShapeOf(current);
+      if (selected?.kind === 'text') {
+        next = replaceShape(next, { ...selected, ...partial });
+      }
+      return next;
+    });
+    commit();
   }
 
   // ----- Coordinate inputs (keyboard-only positioning) -----
@@ -387,6 +477,19 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       });
       commit();
     },
+    onFontFamilyChange: (fontFamily) => applyTextStyle({ fontFamily }),
+    onFontSizeChange: (fontSize) => applyTextStyle({ fontSize }),
+    onToggleBold: () => {
+      const current = selectedTextShape() ?? null;
+      const base = current ? current.fontWeight : store.get().currentStyle.fontWeight;
+      applyTextStyle({ fontWeight: base === 'bold' ? 'normal' : 'bold' });
+    },
+    onToggleItalic: () => {
+      const current = selectedTextShape() ?? null;
+      const base = current ? current.fontStyle : store.get().currentStyle.fontStyle;
+      applyTextStyle({ fontStyle: base === 'italic' ? 'normal' : 'italic' });
+    },
+    onAlignChange: (textAlign) => applyTextStyle({ textAlign }),
     onDeleteSelected: () => {
       const id = store.get().selectedId;
       if (!id) return;
@@ -396,6 +499,10 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     onInsertAtCenter: () => insertDefaultAtCenter(),
   });
   utilHost.appendChild(panel.container);
+  // Load the annotation web fonts (idempotent; Ghost may have them already).
+  ensureAnnotateFontsLoaded();
+  // Reflect the initial tool/selection in the text-control visibility.
+  syncTextControls(initialState);
 
   // ----- Initial paint + observers -----
   recomputeViewport();
@@ -432,6 +539,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   const unsubscribe = store.subscribe((next) => {
     const shapesChanged = next.shapes !== lastShapes;
     const selectionChanged = next.selectedId !== lastSelected;
+    const toolChanged = next.activeTool !== lastTool;
     if (shapesChanged) {
       lastShapes = next.shapes;
       paintShapes();
@@ -440,7 +548,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       lastSelected = next.selectedId;
       panel.setCanDelete(next.selectedId !== null);
     }
-    if (next.activeTool !== lastTool) {
+    if (toolChanged) {
       lastTool = next.activeTool;
       panel.setActiveTool(next.activeTool);
     }
@@ -448,7 +556,10 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       lastStyle = next.currentStyle;
       panel.setStyle(next.currentStyle);
     }
-    selectionLayer.update(selectedShapeOf(next), viewport);
+    if (selectionChanged || toolChanged) {
+      syncTextControls(next);
+    }
+    selectionLayer.update(shapeForHandles(next), viewport);
     // Keep the per-selection coordinate inputs in sync.
     // We update on either selection or geometry change so a pointer
     // drag updates the typed values too — the keyboard and pointer
@@ -563,9 +674,10 @@ function applyColorToShape(shape: Shape, color: string): Shape {
 function applyStrokeWidthToShape(shape: Shape, strokeWidth: number): Shape {
   switch (shape.kind) {
     case 'text':
-      // Text doesn't have a stroke width; treat the slider as a
-      // "size scale" that nudges fontSize in 8 px increments.
-      return { ...shape, fontSize: Math.max(8, Math.round(strokeWidth * 4)) };
+      // Text has no stroke width; its size is the font-size stepper in the
+      // text controls. The Width slider is hidden when text is in play, so
+      // this branch is unreachable in practice — leave the shape untouched.
+      return shape;
     case 'rect':
     case 'ellipse':
     case 'arrow':

@@ -107,6 +107,14 @@ export function buildSelectionLayer(options: SelectionLayerOptions): SelectionLa
       }
       return;
     }
+    if (shape.kind === 'text') {
+      // Text isn't handle-resizable — its size is set in the panel (font size),
+      // not by dragging. The selection outline (drawn by CSS via the host)
+      // still shows what's selected, and a body drag still moves it. Hide all
+      // resize handles so there's just one box, not a handle frame too.
+      hideAll(handleEls);
+      return;
+    }
     const box = boundingBoxOf(shape);
     const handlePositions = selectionHandlePositions(box);
     for (const direction of ALL_SELECTION_HANDLES) {
@@ -184,7 +192,11 @@ function startHandleResizeGesture(
   };
 }
 
-function applyHandleDrag(
+/**
+ * Map a handle drag to a new shape. Exported for unit testing; the gesture
+ * wrapper calls it on each pointer move.
+ */
+export function applyHandleDrag(
   shape: Shape,
   direction: SelectionHandle,
   image: { x: number; y: number },
@@ -212,18 +224,11 @@ function applyHandleDrag(
       if (direction === 'br') return { ...arrow, x2: image.x, y2: image.y };
       return shape;
     }
-    case 'text': {
-      // Text shapes resize by font size. The bottom-right handle
-      // scales the font; other handles aren't shown for text in v1.
-      if (direction !== 'br') return shape;
-      const dx = image.x - shape.x;
-      const dy = image.y - shape.y;
-      // Scale so the dragged distance roughly matches the typed
-      // box's diagonal. A min font size of 8 px stops the user from
-      // making text invisible by accident.
-      const newSize = Math.max(8, Math.round(Math.max(dx, dy) * 0.6));
-      return { ...shape, fontSize: newSize };
-    }
+    case 'text':
+      // Text isn't handle-resizable (its size is the panel's font-size
+      // control). The selection layer hides text handles, so this is
+      // unreachable; return unchanged for exhaustiveness.
+      return shape;
     case 'freehand':
     case 'highlight': {
       // Path shapes scale around their bounding-box centre by the

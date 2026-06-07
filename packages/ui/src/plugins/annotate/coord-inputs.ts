@@ -11,7 +11,7 @@
  *   - rect / ellipse → Left, Top, Width, Height (matches crop's
  *     dimension-input pattern from Phase 6.2; same semantics).
  *   - arrow → Start X, Start Y, End X, End Y (the two endpoints).
- *   - text → X, Y (anchor only; size is driven by the font size
+ *   - text → X, Y (anchor only; size is driven by the font-size
  *     control, and the inline editor handles the text content).
  *
  * One row instance is reused across selections; it rebuilds its

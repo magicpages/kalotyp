@@ -5,7 +5,11 @@
  */
 
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   ArrowRight,
+  Bold as BoldIcon,
   Check as CheckIcon,
   ChevronDown,
   Circle as CircleIcon,
@@ -13,6 +17,7 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   Highlighter,
+  Italic as ItalicIcon,
   Keyboard as KeyboardIcon,
   Link2,
   Link2Off,
@@ -79,7 +84,12 @@ export type IconName =
   | 'flipVertical'
   | 'chevronDown'
   | 'settings'
-  | 'keyboard';
+  | 'keyboard'
+  | 'bold'
+  | 'italic'
+  | 'alignLeft'
+  | 'alignCenter'
+  | 'alignRight';
 
 function resolve(name: IconName): IconNode {
   switch (name) {
@@ -123,6 +133,16 @@ function resolve(name: IconName): IconNode {
       return SettingsIcon as IconNode;
     case 'keyboard':
       return KeyboardIcon as IconNode;
+    case 'bold':
+      return BoldIcon as IconNode;
+    case 'italic':
+      return ItalicIcon as IconNode;
+    case 'alignLeft':
+      return AlignLeft as IconNode;
+    case 'alignCenter':
+      return AlignCenter as IconNode;
+    case 'alignRight':
+      return AlignRight as IconNode;
   }
 }
 

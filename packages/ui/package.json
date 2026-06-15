@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@magicpages/kalotyp-core": "workspace:*",
-    "lucide": "^1.17.0"
+    "lucide": "^1.18.0"
   },
   "devDependencies": {
     "jsdom": "29.1.1",

@@ -46,12 +46,12 @@
   },
   "dependencies": {
     "@magicpages/kalotyp-core": "workspace:*",
-    "lucide": "^1.17.0"
+    "lucide": "^1.21.0"
   },
   "devDependencies": {
     "jsdom": "29.1.1",
     "typescript": "6.0.3",
     "vite": "8.0.16",
-    "vitest": "4.1.8"
+    "vitest": "4.1.9"
   }
 }

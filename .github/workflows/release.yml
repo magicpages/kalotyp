@@ -39,7 +39,7 @@ jobs:
       pull-requests: write # open/update the Version PR
       id-token: write # OIDC for npm Trusted Publishing + provenance
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v5
 

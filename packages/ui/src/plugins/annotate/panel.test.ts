@@ -167,3 +167,32 @@ describe('annotate panel — keyboard placement Insert button', () => {
     expect(lastChild).toBe(coordInputs);
   });
 });
+
+describe('annotate panel — font size input', () => {
+  it('commits a valid size and reverts invalid input to the last valid size, not the palette default', () => {
+    const { panel, events } = build('text');
+    const input = panel.fontSizeInput;
+
+    // A valid change commits and becomes the new "last valid" value.
+    input.value = '64';
+    input.dispatchEvent(new Event('change'));
+    expect(events.fontSize).toEqual([64]);
+
+    // An invalid entry reverts to 64 (the current size), NOT the initial 24.
+    input.value = '3'; // below the min of 8
+    input.dispatchEvent(new Event('change'));
+    expect(input.value).toBe('64');
+    // No extra onFontSizeChange fired for the invalid entry.
+    expect(events.fontSize).toEqual([64]);
+  });
+
+  it('keeps the revert target in sync when the style changes externally', () => {
+    const { panel } = build('text');
+    panel.setStyle({ ...initialStyle, fontSize: 120 });
+
+    // After an external style change to 120, an invalid entry reverts to 120.
+    panel.fontSizeInput.value = '0';
+    panel.fontSizeInput.dispatchEvent(new Event('change'));
+    expect(panel.fontSizeInput.value).toBe('120');
+  });
+});

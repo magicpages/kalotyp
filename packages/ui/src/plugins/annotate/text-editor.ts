@@ -84,9 +84,12 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
   // elsewhere (the canvas, the page) commit.
   const onPointerDownOutside = (event: PointerEvent): void => {
     if (activeShape === null) return;
-    const target = event.target as Element | null;
+    // `event.target` can be a non-Element (e.g. a text node); narrow first so
+    // `contains`/`closest` are always safe to call.
+    const target = event.target;
+    if (!(target instanceof Element)) return;
     if (editor.contains(target)) return;
-    if (target?.closest('.kalotyp-annotate-panel')) return;
+    if (target.closest('.kalotyp-annotate-panel')) return;
     options.onCommit();
   };
 

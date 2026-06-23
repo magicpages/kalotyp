@@ -253,6 +253,9 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
   fontSelect.value = options.initialStyle.fontFamily;
   fontSelect.addEventListener('change', () => options.onFontFamilyChange(fontSelect.value));
 
+  // Last accepted font size, used to revert invalid typed input. Kept in sync
+  // by `setStyle` so a typo restores the *current* size, not the palette default.
+  let lastValidFontSize = options.initialStyle.fontSize;
   const fontSizeInput = document.createElement('input');
   fontSizeInput.type = 'number';
   fontSizeInput.className = 'kalotyp-annotate-font-size';
@@ -263,8 +266,12 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
   fontSizeInput.setAttribute('aria-label', 'Font size');
   fontSizeInput.addEventListener('change', () => {
     const value = Math.round(fontSizeInput.valueAsNumber);
-    if (Number.isFinite(value) && value >= 8) options.onFontSizeChange(value);
-    else fontSizeInput.value = String(options.initialStyle.fontSize);
+    if (Number.isFinite(value) && value >= 8) {
+      lastValidFontSize = value;
+      options.onFontSizeChange(value);
+    } else {
+      fontSizeInput.value = String(lastValidFontSize);
+    }
   });
 
   const boldButton = document.createElement('button');
@@ -356,6 +363,7 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
     // Text controls reflect the same palette (current style for new shapes, or
     // the selected text shape's attributes, both threaded through here).
     if (fontSelect.value !== style.fontFamily) fontSelect.value = style.fontFamily;
+    lastValidFontSize = style.fontSize;
     if (Math.round(fontSizeInput.valueAsNumber) !== style.fontSize) {
       fontSizeInput.value = String(style.fontSize);
     }

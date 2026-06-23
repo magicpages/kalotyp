@@ -1,17 +1,22 @@
 import type { Rect } from '../../geometry/rect.js';
-import { assertNever, type Shape } from './state.js';
+import { assertNever, normalizeTextShape, type Shape } from './state.js';
+import { estimateLineWidth, layoutTextLines } from './text-layout.js';
 
 /**
- * Axis-aligned bounding box in image-space pixels. Text uses a font-metric
- * estimate because jsdom's `measureText` returns 0; the renderer measures
- * real text at paint time.
+ * Axis-aligned bounding box in image-space pixels. `shape.x, shape.y` is the
+ * text block's top-left for every `textAlign` (alignment justifies lines within
+ * the block, it doesn't move the origin), so the box origin is the anchor. A
+ * font-metric estimate is used here (jsdom's `measureText` returns 0); the
+ * renderer measures real text at paint time.
  */
 export function boundingBoxOf(shape: Shape): Rect {
   switch (shape.kind) {
     case 'text': {
-      const { width, height } = estimateTextSize(shape.text, shape.fontSize);
-      const x = alignToOrigin(shape.x, width, shape.textAlign);
-      return { x, y: shape.y, width, height };
+      const text = normalizeTextShape(shape);
+      const { width, height } = layoutTextLines(text, (line) =>
+        estimateLineWidth(line, text.fontSize),
+      );
+      return { x: text.x, y: text.y, width, height };
     }
     case 'rect':
     case 'ellipse':
@@ -103,39 +108,4 @@ export function rectFromHandleDrag(
   if (handle === 'bl' || handle === 'b' || handle === 'br') bottom = pointer.y;
 
   return { x, y, width: right - x, height: bottom - y };
-}
-
-/**
- * Estimate painted text size without `measureText` (jsdom returns 0).
- * Uses 0.55em mean Latin char width and 1.2em line height — close enough
- * for selection-handle placement.
- */
-export function estimateTextSize(
-  text: string,
-  fontSize: number,
-): { width: number; height: number } {
-  const lines = text.length === 0 ? [''] : text.split('\n');
-  let maxLineLen = 0;
-  for (const line of lines) {
-    if (line.length > maxLineLen) maxLineLen = line.length;
-  }
-  const width = Math.max(fontSize * 0.6, maxLineLen * fontSize * 0.55);
-  const height = lines.length * fontSize * 1.2;
-  return { width, height };
-}
-
-/** Convert a text shape's anchor to the bounding box's top-left given `textAlign`. */
-export function alignToOrigin(
-  anchorX: number,
-  width: number,
-  align: 'left' | 'center' | 'right',
-): number {
-  switch (align) {
-    case 'left':
-      return anchorX;
-    case 'center':
-      return anchorX - width / 2;
-    case 'right':
-      return anchorX - width;
-  }
 }

@@ -6,6 +6,10 @@ const initialStyle = {
   strokeWidth: 4,
   fillColor: 'transparent',
   fontSize: 24,
+  fontFamily: 'system',
+  fontWeight: 'normal' as const,
+  fontStyle: 'normal' as const,
+  textAlign: 'left' as const,
 };
 
 function build(
@@ -24,6 +28,11 @@ function build(
     delete: [],
     tool: [],
     insert: [],
+    fontFamily: [],
+    fontSize: [],
+    bold: [],
+    italic: [],
+    align: [],
   };
   const coordInputs = document.createElement('div');
   const panel = buildAnnotatePanel({
@@ -34,6 +43,11 @@ function build(
     onSelectTool: (tool) => events.tool?.push(tool),
     onColorChange: (color) => events.color?.push(color),
     onStrokeWidthChange: (w) => events.stroke?.push(w),
+    onFontFamilyChange: (f) => events.fontFamily?.push(f),
+    onFontSizeChange: (s) => events.fontSize?.push(s),
+    onToggleBold: () => events.bold?.push(true),
+    onToggleItalic: () => events.italic?.push(true),
+    onAlignChange: (a) => events.align?.push(a),
     onDeleteSelected: () => events.delete?.push(true),
     onInsertAtCenter: () => events.insert?.push(true),
   });
@@ -137,6 +151,11 @@ describe('annotate panel — keyboard placement Insert button', () => {
       onSelectTool: () => {},
       onColorChange: () => {},
       onStrokeWidthChange: () => {},
+      onFontFamilyChange: () => {},
+      onFontSizeChange: () => {},
+      onToggleBold: () => {},
+      onToggleItalic: () => {},
+      onAlignChange: () => {},
       onDeleteSelected: () => {},
       onInsertAtCenter: () => {},
     });

@@ -13,6 +13,7 @@ import {
   mintShapeId,
   mirrorShape,
   normaliseRectExtent,
+  normalizeTextShape,
   type RectShape,
   replaceShape,
   rotateShape,
@@ -152,6 +153,9 @@ describe('annotate state', () => {
       fontSize: 24,
       color: '#000',
       textAlign: 'left',
+      fontFamily: 'system',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
     };
     const arrow: Shape = {
       id: 'a',
@@ -229,7 +233,7 @@ describe('annotate state', () => {
       expect(shape.y1).toBe(400);
     });
 
-    it('places an empty text shape with the palette font size, centre-aligned', () => {
+    it('places an empty text anchor at image centre with the palette style', () => {
       const shape = createCenteredShape('text', {
         imageSize: { width: 1000, height: 800 },
         style,
@@ -238,7 +242,10 @@ describe('annotate state', () => {
       expect(shape.kind).toBe('text');
       expect(shape.text).toBe('');
       expect(shape.fontSize).toBe(style.fontSize);
-      expect(shape.textAlign).toBe('center');
+      expect(shape.textAlign).toBe(style.textAlign);
+      expect(shape.fontFamily).toBe(style.fontFamily);
+      expect(shape.fontWeight).toBe(style.fontWeight);
+      expect(shape.fontStyle).toBe(style.fontStyle);
       expect(shape.x).toBe(500);
       expect(shape.y).toBe(400 - Math.round(style.fontSize / 2));
     });
@@ -337,5 +344,43 @@ describe('annotate state', () => {
       const next = rotateShape(rect, 0, oldDims);
       expect(next).toBe(rect);
     });
+  });
+});
+
+describe('normalizeTextShape', () => {
+  const complete: TextShape = {
+    id: 't',
+    kind: 'text',
+    x: 0,
+    y: 0,
+    text: 'hi',
+    fontSize: 20,
+    color: '#000',
+    textAlign: 'left',
+    fontFamily: 'inter',
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+  };
+
+  it('returns a complete shape unchanged (same reference)', () => {
+    expect(normalizeTextShape(complete)).toBe(complete);
+  });
+
+  it('fills missing font fields with defaults', () => {
+    // Simulate a stale shape lacking the new fields.
+    const stale = {
+      id: 't',
+      kind: 'text',
+      x: 0,
+      y: 0,
+      text: 'hi',
+      fontSize: 20,
+      color: '#000',
+      textAlign: 'left',
+    } as unknown as TextShape;
+    const fixed = normalizeTextShape(stale);
+    expect(fixed.fontFamily).toBe('system');
+    expect(fixed.fontWeight).toBe('normal');
+    expect(fixed.fontStyle).toBe('normal');
   });
 });

@@ -120,22 +120,52 @@
 .kalotyp-annotate-text-editor {
   position: absolute;
   pointer-events: auto;
-  min-width: 60px;
-  min-height: 1em;
-  padding: 4px 6px;
-  margin-left: -6px;
-  margin-top: -4px;
-  background: rgba(var(--color-background), 0.85);
-  border: 1px dashed rgba(var(--color-foreground), 0.55);
-  border-radius: 4px;
+  display: inline-block;
+  min-width: 1ch;
+  /* Transparent input overlay: the visible glyphs are painted on the canvas
+   * (same code as the bake), so editing == committed and the text can't jump.
+   * This element only captures keystrokes and shows the caret. `color` and
+   * `caret-color` are set in JS (transparent text, shape-coloured caret). */
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
   outline: none;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
   line-height: 1.2;
-  caret-color: rgb(var(--color-foreground));
+}
+
+/*
+ * Keep the overlay's text transparent even when selected. The visible glyphs
+ * are painted on the canvas (correctly placed); the contenteditable's own text
+ * sits ~half-leading lower (an unavoidable line-box vs canvas-textBaseline
+ * gap). Default selection would paint that hidden text in the selection colour,
+ * revealing it below the canvas text — the text appears to "jump down" on
+ * select. Forcing the selection foreground transparent shows just a translucent
+ * highlight box over the canvas glyphs, with no misaligned text.
+ */
+.kalotyp-annotate-text-editor::selection {
+  color: transparent;
+  background-color: rgba(99, 102, 241, 0.35);
 }
 
 /* ----- Bottom panel ----- */
+/*
+ * Reserve a stable height for the annotate panel area, sized to its tallest
+ * layout (toolbar + style row + text controls + coordinate inputs). The panel
+ * shows/hides contextual rows — the text controls when the text tool is active
+ * or a text shape is selected, and the X/Y inputs when any shape is selected.
+ * Because `.kalotyp-util-main` is `flex: 0 0 auto`, those rows would otherwise
+ * grow the panel and shrink the sibling stage, visibly rescaling the
+ * letterboxed image (the "jump" when entering text edit). A fixed reserve keeps
+ * the stage size constant across all annotate states. Mobile keeps its own
+ * `min-height … !important`, so this only applies on desktop.
+ */
+.kalotyp-util-main:has(.kalotyp-annotate-panel) {
+  min-height: 244px;
+  align-items: flex-start;
+}
+
 .kalotyp-annotate-panel {
   display: flex;
   flex-direction: column;
@@ -198,6 +228,99 @@
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* ----- Text controls row (font / size / bold / italic / align) ----- */
+.kalotyp-annotate-text-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kalotyp-annotate-font {
+  height: var(--kalotyp-control-height);
+  padding: 0 8px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  cursor: pointer;
+}
+
+.kalotyp-annotate-font:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-font-size {
+  width: 64px;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalotyp-annotate-font-size:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-text-toggle,
+.kalotyp-annotate-align-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: var(--kalotyp-control-height);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kalotyp-muted);
+  cursor: pointer;
+  transition: var(--kalotyp-transition);
+}
+
+.kalotyp-annotate-text-toggle svg,
+.kalotyp-annotate-align-button svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.kalotyp-annotate-text-toggle:hover,
+.kalotyp-annotate-align-button:hover {
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-annotate-text-toggle:focus-visible,
+.kalotyp-annotate-align-button:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-text-toggle[aria-pressed="true"],
+.kalotyp-annotate-align-button[aria-checked="true"] {
+  background: rgb(var(--color-background));
+  border-color: var(--kalotyp-border);
+  color: rgb(var(--color-foreground));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.kalotyp-annotate-align {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .kalotyp-annotate-swatches {

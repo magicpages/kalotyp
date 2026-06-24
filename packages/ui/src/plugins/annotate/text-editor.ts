@@ -5,8 +5,8 @@
  * annotation's image-space anchor. Using a `<div>` instead of a
  * `<textarea>` lets us match the canvas-side font and size precisely
  * (textareas restrict the visible padding/size combination on some
- * browsers). The element keeps a fixed width by default and grows
- * vertically with line breaks.
+ * browsers). The element auto-sizes to its content and grows with the
+ * text the user types (line breaks via Shift+Enter).
  *
  * Lifecycle:
  *   - `open(shape, viewport)`: position the editor over the shape,
@@ -20,8 +20,9 @@
  */
 
 import {
+  cssFontString,
   type SourceImage,
-  SYSTEM_FONT_STACK,
+  TEXT_LINE_HEIGHT,
   type TextShape,
   type Viewport,
 } from '@magicpages/kalotyp-core';
@@ -35,6 +36,10 @@ export interface TextEditorOptions {
 
 export interface TextEditorHandle {
   open(shape: TextShape, viewport: Viewport, source: SourceImage): void;
+  /** Re-apply font/colour/alignment/position to the open editor without
+   *  resetting its text or moving the caret (used when panel controls
+   *  restyle the text mid-edit). */
+  restyle(shape: TextShape, viewport: Viewport): void;
   close(): void;
   destroy(): void;
 }
@@ -72,13 +77,19 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
     }
   };
 
-  // Click outside the editor element commits the edit. Listening on
-  // the host (the text-overlay div) means anywhere outside the editor
-  // bubble closes it; we filter clicks on the editor itself to let
-  // them pass through normally.
+  // Click outside the editor commits the edit — but NOT clicks on the
+  // annotation panel. The font picker, size stepper, bold/italic and
+  // alignment controls are part of the editing session; touching them must
+  // restyle the live text, not commit and close the editor. Only clicks
+  // elsewhere (the canvas, the page) commit.
   const onPointerDownOutside = (event: PointerEvent): void => {
     if (activeShape === null) return;
-    if (editor.contains(event.target as Node)) return;
+    // `event.target` can be a non-Element (e.g. a text node); narrow first so
+    // `contains`/`closest` are always safe to call.
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (editor.contains(target)) return;
+    if (target.closest('.kalotyp-annotate-panel')) return;
     options.onCommit();
   };
 
@@ -86,31 +97,44 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
   editor.addEventListener('keydown', onKeyDown);
   document.addEventListener('pointerdown', onPointerDownOutside, true);
 
+  /**
+   * Position the editor over the shape and match its font metrics. The editor's
+   * OWN text is kept transparent — the visible glyphs are painted on the canvas
+   * by the same `paintText` the bake uses, so what you edit is byte-identical to
+   * what bakes and can never jump on commit. This element exists only to capture
+   * keystrokes and show the caret; aligning a contenteditable's text layout to
+   * canvas `textBaseline:'top'` pixel-for-pixel is font-metric-dependent and
+   * unreliable, so we don't try — we just place the caret close.
+   */
+  function applyStyles(shape: TextShape, viewport: Viewport): void {
+    // `shape.x, shape.y` is the block's top-left for every alignment (same as
+    // the canvas).
+    const left = viewport.displayRect.x + shape.x * viewport.scale;
+    const top = viewport.displayRect.y + shape.y * viewport.scale;
+    editor.style.left = `${left}px`;
+    editor.style.top = `${top}px`;
+    // Text is invisible (the canvas shows it); only the caret is coloured.
+    editor.style.color = 'transparent';
+    editor.style.caretColor = shape.color;
+    // Same font/size/zoom as the canvas so the caret tracks the painted glyphs
+    // horizontally (identical advances) and the line box matches vertically.
+    editor.style.font = cssFontString(shape, viewport.scale);
+    // The `font` shorthand resets `line-height` to `normal`; pin it to the
+    // canvas line-height multiple so the caret height matches a painted line.
+    editor.style.lineHeight = String(TEXT_LINE_HEIGHT);
+    editor.style.textAlign = shape.textAlign;
+    editor.style.transformOrigin = 'top left';
+    // Auto-size to content; cap the width so a long line can't slide off-stage.
+    editor.style.width = 'max-content';
+    const maxWidth = Math.max(100, viewport.displayRect.x + viewport.displayRect.width - left - 8);
+    editor.style.maxWidth = `${maxWidth}px`;
+  }
+
   return {
     open(shape, viewport, source): void {
       activeShape = shape;
-      // Position in stage CSS pixels: image origin + image-space
-      // anchor scaled by viewport.
-      const left = viewport.displayRect.x + shape.x * viewport.scale;
-      const top = viewport.displayRect.y + shape.y * viewport.scale;
       editor.style.display = '';
-      editor.style.left = `${left}px`;
-      editor.style.top = `${top}px`;
-      editor.style.color = shape.color;
-      editor.style.font = `${shape.fontSize * viewport.scale}px ${SYSTEM_FONT_STACK}`;
-      editor.style.textAlign = shape.textAlign;
-      // Align the editor's anchor to the shape's anchor for the
-      // current `textAlign` so typing grows the box outward in the
-      // same direction the rendered text would.
-      editor.style.transformOrigin = transformOriginFor(shape.textAlign);
-      // Constrain width so the user has room to type without the
-      // editor sliding off the stage. The displayRect.width is the
-      // image's painted width in CSS pixels.
-      const maxWidth = Math.max(
-        100,
-        viewport.displayRect.x + viewport.displayRect.width - left - 8,
-      );
-      editor.style.maxWidth = `${maxWidth}px`;
+      applyStyles(shape, viewport);
       editor.innerText = shape.text;
       // Defer focus so the layout pass settles before we move the
       // caret. Without this, Safari occasionally focuses but doesn't
@@ -130,6 +154,13 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
       // today but a future per-image-bound clamp would.
       void source;
     },
+    restyle(shape, viewport): void {
+      if (activeShape === null) return;
+      activeShape = shape;
+      // Restyle only — keep the text and the caret/selection untouched so the
+      // user can keep typing after, say, picking a font.
+      applyStyles(shape, viewport);
+    },
     close(): void {
       activeShape = null;
       editor.style.display = 'none';
@@ -142,15 +173,4 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
       editor.remove();
     },
   };
-}
-
-function transformOriginFor(align: 'left' | 'center' | 'right'): string {
-  switch (align) {
-    case 'left':
-      return 'top left';
-    case 'center':
-      return 'top center';
-    case 'right':
-      return 'top right';
-  }
 }

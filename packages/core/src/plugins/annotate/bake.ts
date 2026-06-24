@@ -1,19 +1,42 @@
 import { createBakeCanvas, getBakeContext2D } from '../../canvas/bake-canvas.js';
 import type { SourceImage } from '../utility.js';
+import { cssFontString } from './fonts.js';
 import { tracePath } from './smooth.js';
-import { assertNever, type Shape } from './state.js';
+import { assertNever, normalizeTextShape, type Shape } from './state.js';
+import { lineOffset, TEXT_LINE_HEIGHT, textLines } from './text-layout.js';
 
 export interface AnnotateBakeInput {
   readonly shapes: ReadonlyArray<Shape>;
 }
 
+/** Re-exported from fonts.ts; the system stack is the default font key's value. */
+export { SYSTEM_FONT_STACK } from './fonts.js';
+
 /**
- * System font stack used at bake; matches what the preview canvas renders.
- * No web font is loaded — the bundle budget rules it out and the bake
- * pipeline has no "wait for font" affordance.
+ * Cap on how long the bake waits for web fonts to load before painting. A
+ * slow or unreachable CDN must never block Save indefinitely; on timeout we
+ * bake with whatever faces are ready (falling back to the generic family).
  */
-export const SYSTEM_FONT_STACK =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const FONT_LOAD_TIMEOUT_MS = 400;
+
+/**
+ * Ensure every font face used by the text shapes is loaded before bake, so the
+ * baked output matches the on-screen preview. Bounded by a timeout and a
+ * no-op where `document.fonts` is unavailable (jsdom / worker / OffscreenCanvas).
+ */
+async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<void> {
+  if (typeof document === 'undefined' || !('fonts' in document)) return;
+  const specs = new Set<string>();
+  for (const shape of shapes) {
+    if (shape.kind === 'text') specs.add(cssFontString(normalizeTextShape(shape)));
+  }
+  if (specs.size === 0) return;
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, FONT_LOAD_TIMEOUT_MS));
+  const loaded = Promise.all([...specs].map((spec) => document.fonts.load(spec)))
+    .then(() => document.fonts.ready)
+    .then(() => undefined);
+  await Promise.race([loaded, timeout]);
+}
 
 /** Paint every shape onto a fresh canvas at the source's dimensions. */
 export async function bakeAnnotate(
@@ -21,6 +44,8 @@ export async function bakeAnnotate(
   source: SourceImage,
 ): Promise<SourceImage> {
   if (state.shapes.length === 0) return source;
+
+  await awaitFontsForBake(state.shapes);
 
   const bake = createBakeCanvas(source.width, source.height);
   const ctx = getBakeContext2D(bake);
@@ -72,20 +97,28 @@ export function paintShape(
 
 function paintText(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-  shape: Shape & { kind: 'text' },
+  textShape: Shape & { kind: 'text' },
 ): void {
+  const shape = normalizeTextShape(textShape);
   ctx.save();
   ctx.fillStyle = shape.color;
-  ctx.font = `${shape.fontSize}px ${SYSTEM_FONT_STACK}`;
-  ctx.textAlign = shape.textAlign;
+  ctx.font = cssFontString(shape);
+  // `shape.x, shape.y` is ALWAYS the block's top-left. Alignment justifies each
+  // line *within* the block via a manual per-line offset — never via the canvas
+  // anchor — so the editor (which uses the same top-left origin + CSS
+  // text-align) matches exactly, for any alignment. No wrapping: one line per
+  // explicit `\n`.
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  // Paint each line on its own; explicit `\n` only (no auto-wrap).
-  const lines = shape.text.length === 0 ? [''] : shape.text.split('\n');
-  const lineHeight = shape.fontSize * 1.2;
+  const lines = textLines(shape.text);
+  const widths = lines.map((line) => ctx.measureText(line).width);
+  const blockWidth = widths.reduce((max, w) => (w > max ? w : max), 0);
+  const lineHeight = shape.fontSize * TEXT_LINE_HEIGHT;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line === undefined) continue;
-    ctx.fillText(line, shape.x, shape.y + i * lineHeight);
+    const dx = lineOffset(blockWidth, widths[i] ?? 0, shape.textAlign);
+    ctx.fillText(line, shape.x + dx, shape.y + i * lineHeight);
   }
   ctx.restore();
 }

@@ -57,6 +57,9 @@ const TEXT: TextShape = {
   fontSize: 24,
   color: '#000',
   textAlign: 'center',
+  fontFamily: 'system',
+  fontWeight: 'normal',
+  fontStyle: 'normal',
 };
 
 describe('coord-inputs row (Phase 6.3 keyboard placement)', () => {

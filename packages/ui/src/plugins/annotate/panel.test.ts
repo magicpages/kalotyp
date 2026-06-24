@@ -6,6 +6,10 @@ const initialStyle = {
   strokeWidth: 4,
   fillColor: 'transparent',
   fontSize: 24,
+  fontFamily: 'system',
+  fontWeight: 'normal' as const,
+  fontStyle: 'normal' as const,
+  textAlign: 'left' as const,
 };
 
 function build(
@@ -24,6 +28,11 @@ function build(
     delete: [],
     tool: [],
     insert: [],
+    fontFamily: [],
+    fontSize: [],
+    bold: [],
+    italic: [],
+    align: [],
   };
   const coordInputs = document.createElement('div');
   const panel = buildAnnotatePanel({
@@ -34,6 +43,11 @@ function build(
     onSelectTool: (tool) => events.tool?.push(tool),
     onColorChange: (color) => events.color?.push(color),
     onStrokeWidthChange: (w) => events.stroke?.push(w),
+    onFontFamilyChange: (f) => events.fontFamily?.push(f),
+    onFontSizeChange: (s) => events.fontSize?.push(s),
+    onToggleBold: () => events.bold?.push(true),
+    onToggleItalic: () => events.italic?.push(true),
+    onAlignChange: (a) => events.align?.push(a),
     onDeleteSelected: () => events.delete?.push(true),
     onInsertAtCenter: () => events.insert?.push(true),
   });
@@ -137,6 +151,11 @@ describe('annotate panel — keyboard placement Insert button', () => {
       onSelectTool: () => {},
       onColorChange: () => {},
       onStrokeWidthChange: () => {},
+      onFontFamilyChange: () => {},
+      onFontSizeChange: () => {},
+      onToggleBold: () => {},
+      onToggleItalic: () => {},
+      onAlignChange: () => {},
       onDeleteSelected: () => {},
       onInsertAtCenter: () => {},
     });
@@ -146,5 +165,34 @@ describe('annotate panel — keyboard placement Insert button', () => {
     // insert controls.
     const lastChild = panel.container.lastElementChild;
     expect(lastChild).toBe(coordInputs);
+  });
+});
+
+describe('annotate panel — font size input', () => {
+  it('commits a valid size and reverts invalid input to the last valid size, not the palette default', () => {
+    const { panel, events } = build('text');
+    const input = panel.fontSizeInput;
+
+    // A valid change commits and becomes the new "last valid" value.
+    input.value = '64';
+    input.dispatchEvent(new Event('change'));
+    expect(events.fontSize).toEqual([64]);
+
+    // An invalid entry reverts to 64 (the current size), NOT the initial 24.
+    input.value = '3'; // below the min of 8
+    input.dispatchEvent(new Event('change'));
+    expect(input.value).toBe('64');
+    // No extra onFontSizeChange fired for the invalid entry.
+    expect(events.fontSize).toEqual([64]);
+  });
+
+  it('keeps the revert target in sync when the style changes externally', () => {
+    const { panel } = build('text');
+    panel.setStyle({ ...initialStyle, fontSize: 120 });
+
+    // After an external style change to 120, an invalid entry reverts to 120.
+    panel.fontSizeInput.value = '0';
+    panel.fontSizeInput.dispatchEvent(new Event('change'));
+    expect(panel.fontSizeInput.value).toBe('120');
   });
 });

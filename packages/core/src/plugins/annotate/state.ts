@@ -16,17 +16,26 @@ interface ShapeBase {
   readonly kind: ShapeKind;
 }
 
+export type TextFontWeight = 'normal' | 'bold';
+export type TextFontStyle = 'normal' | 'italic';
+export type TextAlign = 'left' | 'center' | 'right';
+
 export interface TextShape extends ShapeBase {
   readonly kind: 'text';
   /** Top-left anchor in image-space pixels. */
   readonly x: number;
   readonly y: number;
   readonly text: string;
-  /** Font size in image-space pixels. */
+  /** Font size in image-space pixels. Changed via the panel, not by handles. */
   readonly fontSize: number;
   /** CSS colour string. */
   readonly color: string;
-  readonly textAlign: 'left' | 'center' | 'right';
+  /** Glyph justification (multi-line text aligns relative to the anchor). */
+  readonly textAlign: TextAlign;
+  /** Font key from the font catalogue (see fonts.ts), e.g. `'system'`, `'inter'`. */
+  readonly fontFamily: string;
+  readonly fontWeight: TextFontWeight;
+  readonly fontStyle: TextFontStyle;
 }
 
 export interface RectShape extends ShapeBase {
@@ -96,6 +105,11 @@ export interface StylePalette {
   readonly fillColor: string | null;
   /** Used for new text shapes. In image-space pixels. */
   readonly fontSize: number;
+  /** Font key for new text shapes (see fonts.ts). */
+  readonly fontFamily: string;
+  readonly fontWeight: TextFontWeight;
+  readonly fontStyle: TextFontStyle;
+  readonly textAlign: TextAlign;
 }
 
 export interface AnnotateState {
@@ -117,12 +131,41 @@ export const TEXT_DEFAULT_FONT_SIZE = 32;
 export const DEFAULT_PALETTE_COLOR = '#ff3b30';
 export const DEFAULT_STROKE_WIDTH = 4;
 
+/** Default font key for new text shapes; resolves to the system stack. */
+export const DEFAULT_FONT_KEY = 'system';
+
 export function defaultStylePalette(): StylePalette {
   return {
     color: DEFAULT_PALETTE_COLOR,
     strokeWidth: DEFAULT_STROKE_WIDTH,
     fillColor: null,
     fontSize: TEXT_DEFAULT_FONT_SIZE,
+    fontFamily: DEFAULT_FONT_KEY,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    textAlign: 'left',
+  };
+}
+
+/**
+ * Fill any missing font fields on a text shape with defaults. Defensive
+ * against partial literals (tests) and stale undo snapshots from a prior dev
+ * build during hot reload — shapes are never persisted, so this is a safety
+ * net, not a schema migration.
+ */
+export function normalizeTextShape(shape: TextShape): TextShape {
+  if (
+    typeof shape.fontFamily === 'string' &&
+    (shape.fontWeight === 'normal' || shape.fontWeight === 'bold') &&
+    (shape.fontStyle === 'normal' || shape.fontStyle === 'italic')
+  ) {
+    return shape;
+  }
+  return {
+    ...shape,
+    fontFamily: typeof shape.fontFamily === 'string' ? shape.fontFamily : DEFAULT_FONT_KEY,
+    fontWeight: shape.fontWeight === 'bold' ? 'bold' : 'normal',
+    fontStyle: shape.fontStyle === 'italic' ? 'italic' : 'normal',
   };
 }
 
@@ -441,7 +484,10 @@ export function createCenteredShape(
         text: '',
         fontSize: style.fontSize,
         color: style.color,
-        textAlign: 'center',
+        textAlign: style.textAlign,
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
       };
     }
   }

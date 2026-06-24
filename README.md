@@ -40,6 +40,16 @@ Download `kalotyp.js` and `kalotyp.css` from the
 them locally with `pnpm build`) and upload both in the integration settings.
 That's the entire setup — no changes to Ghost itself.
 
+### Fonts & privacy
+
+The text annotation tool offers the same web fonts Ghost's own admin uses,
+loaded at runtime from [fonts.bunny.net](https://fonts.bunny.net) — a
+GDPR-friendly, privacy-focused font CDN. No font bytes are bundled, and nothing
+is sent to Magic Pages. If the CDN is unreachable (offline, strict CSP, or
+air-gapped install), the editor falls back to the system font and keeps working;
+saved images bake with whatever font is available. To allow the fonts under a
+content-security policy, permit `fonts.bunny.net` in `style-src`/`font-src`.
+
 ## Repository layout
 
 ```

@@ -98,6 +98,11 @@ const PRESET_COLORS: readonly string[] = [
   '#000000',
 ];
 
+/** Font-size bounds in image-space px; the single source for the input's
+ *  min/max attributes and the typed-value validation (kept from drifting). */
+const FONT_SIZE_MIN = 8;
+const FONT_SIZE_MAX = 400;
+
 export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel {
   const container = document.createElement('div');
   container.className = 'kalotyp-annotate-panel';
@@ -259,14 +264,16 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
   const fontSizeInput = document.createElement('input');
   fontSizeInput.type = 'number';
   fontSizeInput.className = 'kalotyp-annotate-font-size';
-  fontSizeInput.min = '8';
-  fontSizeInput.max = '400';
+  fontSizeInput.min = String(FONT_SIZE_MIN);
+  fontSizeInput.max = String(FONT_SIZE_MAX);
   fontSizeInput.step = '1';
   fontSizeInput.value = String(options.initialStyle.fontSize);
   fontSizeInput.setAttribute('aria-label', 'Font size');
   fontSizeInput.addEventListener('change', () => {
     const value = Math.round(fontSizeInput.valueAsNumber);
-    if (Number.isFinite(value) && value >= 8) {
+    // Enforce both bounds (the min/max attributes only constrain the spinner
+    // arrows, not typed input); revert out-of-range entries to the last valid.
+    if (Number.isFinite(value) && value >= FONT_SIZE_MIN && value <= FONT_SIZE_MAX) {
       lastValidFontSize = value;
       options.onFontSizeChange(value);
     } else {

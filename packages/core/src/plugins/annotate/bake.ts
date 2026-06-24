@@ -24,7 +24,9 @@ const FONT_LOAD_TIMEOUT_MS = 400;
  * baked output matches the on-screen preview. Bounded by a timeout and a
  * no-op where `document.fonts` is unavailable (jsdom / worker / OffscreenCanvas).
  */
-async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<void> {
+// Exported for unit testing the font-await behaviour; not part of the public
+// API surface (intentionally absent from index.ts).
+export async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<void> {
   if (typeof document === 'undefined' || !('fonts' in document)) return;
   const specs = new Set<string>();
   for (const shape of shapes) {
@@ -32,9 +34,14 @@ async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<void> {
   }
   if (specs.size === 0) return;
   const timeout = new Promise<void>((resolve) => setTimeout(resolve, FONT_LOAD_TIMEOUT_MS));
+  // `document.fonts.load` REJECTS when a face is registered (the Bunny CSS
+  // parsed) but its woff2 fetch fails — a realistic offline / blocked / flaky
+  // case. Swallow it so the bake always proceeds and falls back to the generic
+  // family; a font fetch must never break Save or a tab switch.
   const loaded = Promise.all([...specs].map((spec) => document.fonts.load(spec)))
     .then(() => document.fonts.ready)
-    .then(() => undefined);
+    .then(() => undefined)
+    .catch(() => undefined);
   await Promise.race([loaded, timeout]);
 }
 

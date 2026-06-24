@@ -204,8 +204,8 @@ the package under `dist/emoji/`. They load on demand from the **same origin** as
 the bundle, resolved from `/emoji/` by default. If the bundle is served from a
 different path, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
 `setEmojiAssetBase`) to the directory that serves them, and allow that origin
-under `img-src` in any content-security policy. If the artwork can't be fetched,
-the editor falls back to the OS emoji font, so Save always works.
+under `img-src` in any Content Security Policy (CSP). If the artwork can't be
+fetched, the editor falls back to the OS emoji font, so Save always works.
 
 ## Settings the admin reads
 

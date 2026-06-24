@@ -32,9 +32,18 @@ let assetBaseOverride: string | null = null;
  * Override where emoji SVGs are loaded from. The host (e.g. the Ghost loader)
  * calls this when the assets aren't served at the default `/emoji/` path. A
  * trailing slash is enforced.
+ *
+ * Best set before the first emoji is used, but a later change is honoured:
+ * already-cached images were loaded from the old base, so changing it drops the
+ * cache and the next paint reloads from the new base.
  */
 export function setEmojiAssetBase(url: string): void {
-  assetBaseOverride = url.endsWith('/') ? url : `${url}/`;
+  const next = url.endsWith('/') ? url : `${url}/`;
+  if (next === assetBaseOverride) return;
+  assetBaseOverride = next;
+  // Invalidate images keyed to the previous base; a repaint reloads them.
+  cache.clear();
+  notifyLoaded();
 }
 
 function withSlash(url: string): string {

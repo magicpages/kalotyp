@@ -109,7 +109,8 @@ const TEXT_FIELDS: ReadonlyArray<FieldSpec> = [
 const EMOJI_FIELDS: ReadonlyArray<FieldSpec> = [
   { id: 'x', label: 'X' },
   { id: 'y', label: 'Y' },
-  { id: 'size', label: 'Size', min: 1 },
+  // Keep the control's floor in sync with the clamp in `applyCoordEdit`.
+  { id: 'size', label: 'Size', min: EMOJI_MIN_SIZE },
   { id: 'rotation', label: 'Angle', unit: 'degrees' },
 ];
 

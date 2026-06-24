@@ -6,6 +6,26 @@
 Kalotyp is a focused, MIT-licensed image editor that drops into Ghost CMS.
 Self-hosted Ghost users can install it through **Settings → Integrations → Pintura** by uploading the Kalotyp JS and CSS files — no changes to Ghost itself.
 
+![The Kalotyp editor open on the crop tool, following Ghost admin's dark mode](docs/kalotyp-editor.png)
+
+## Features
+
+Nine tools, matching Ghost admin's look and feel:
+
+- **Crop** — drag handles or pick a ratio (Square, 16:9, 4:3, and more), with exact pixel inputs.
+- **Rotate** & **Flip** — straighten or mirror the image.
+- **Filter** & **Finetune** — one-click looks plus brightness/contrast/saturation/sharpen adjustments.
+- **Annotate** — text (web fonts, bold/italic, alignment), rectangles, ellipses, arrows, freehand, highlighter, and **emoji stickers** (searchable picker, place/move/resize/rotate).
+- **Redact** — black-box or blur over sensitive areas.
+- **Resize** & **Frame** — set output dimensions or add a coloured border.
+
+Plus:
+
+- **Follows Ghost's light/dark mode** automatically — it mirrors the admin's Night Shift setting with no configuration.
+- **WYSIWYG** — the on-screen preview is byte-for-byte what the saved image bakes.
+- **Keyboard-accessible** — every tool can be placed, nudged, and sized without a mouse.
+- **Tiny and private** — ~75 KB gzipped, no telemetry, no third-party calls beyond the optional web fonts.
+
 ## Install
 
 In Ghost admin, go to **Settings → Integrations → Pintura** and toggle the

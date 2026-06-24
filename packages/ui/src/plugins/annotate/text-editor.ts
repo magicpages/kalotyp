@@ -49,6 +49,7 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
   editor.className = 'kalotyp-annotate-text-editor';
   editor.setAttribute('contenteditable', 'true');
   editor.setAttribute('role', 'textbox');
+  editor.setAttribute('aria-multiline', 'true');
   editor.setAttribute('aria-label', 'Annotation text');
   editor.spellcheck = false;
   editor.style.display = 'none';

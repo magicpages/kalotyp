@@ -266,7 +266,9 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
   fontSizeInput.setAttribute('aria-label', 'Font size');
   fontSizeInput.addEventListener('change', () => {
     const value = Math.round(fontSizeInput.valueAsNumber);
-    if (Number.isFinite(value) && value >= 8) {
+    // Enforce both bounds (the min/max attributes only constrain the spinner
+    // arrows, not typed input); revert out-of-range entries to the last valid.
+    if (Number.isFinite(value) && value >= 8 && value <= 400) {
       lastValidFontSize = value;
       options.onFontSizeChange(value);
     } else {

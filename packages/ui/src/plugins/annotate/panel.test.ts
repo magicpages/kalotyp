@@ -178,11 +178,15 @@ describe('annotate panel — font size input', () => {
     input.dispatchEvent(new Event('change'));
     expect(events.fontSize).toEqual([64]);
 
-    // An invalid entry reverts to 64 (the current size), NOT the initial 24.
-    input.value = '3'; // below the min of 8
+    // An entry below the min of 8 reverts to 64 (the current size), NOT 24.
+    input.value = '3';
     input.dispatchEvent(new Event('change'));
     expect(input.value).toBe('64');
-    // No extra onFontSizeChange fired for the invalid entry.
+    // An entry above the max of 400 also reverts (typed input bypasses `max`).
+    input.value = '9999';
+    input.dispatchEvent(new Event('change'));
+    expect(input.value).toBe('64');
+    // No extra onFontSizeChange fired for either out-of-range entry.
     expect(events.fontSize).toEqual([64]);
   });
 

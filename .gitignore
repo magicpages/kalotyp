@@ -31,6 +31,8 @@ test-results/
 phase*-*.png
 ghost-*.png
 kalotyp-*.png
+# …but committed documentation images (e.g. the README screenshot) are kept.
+!docs/*.png
 
 apps/ghost-test/.ghost-data/
 apps/ghost-test/content/

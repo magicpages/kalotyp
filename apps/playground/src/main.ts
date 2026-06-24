@@ -41,6 +41,14 @@ const result = document.getElementById('result') as HTMLDivElement;
 const resultMeta = document.getElementById('result-meta') as HTMLDivElement;
 const resultImg = document.getElementById('result-img') as HTMLImageElement;
 const resultDownload = document.getElementById('result-download') as HTMLAnchorElement;
+const darkToggle = document.getElementById('dark-toggle') as HTMLInputElement;
+
+// Mirror Ghost Admin's Night Shift, which toggles `<html class="dark">`
+// (ghost/admin/app/services/feature.js). The editor's CSS keys off that class,
+// so this re-themes a live editor instantly — no rebuild or reopen needed.
+darkToggle.addEventListener('change', () => {
+  document.documentElement.classList.toggle('dark', darkToggle.checked);
+});
 
 let lastObjectUrl: string | null = null;
 

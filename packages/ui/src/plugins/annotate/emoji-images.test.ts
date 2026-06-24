@@ -50,13 +50,17 @@ describe('emoji-images — resolver', () => {
     expect(resolveEmojiImage('a')).toBeNull();
   });
 
-  it('registers and unregisters load listeners', () => {
+  it('fires load listeners on a base change and stops after unsubscribe', () => {
     let calls = 0;
     const off = onEmojiImageLoad(() => {
       calls += 1;
     });
-    expect(typeof off).toBe('function');
+    // A base change invalidates the cache and notifies listeners (so a repaint
+    // reloads the artwork from the new base).
+    setEmojiAssetBase('/cover-a/');
+    expect(calls).toBe(1);
     off();
-    expect(calls).toBe(0);
+    setEmojiAssetBase('/cover-b/');
+    expect(calls).toBe(1);
   });
 });

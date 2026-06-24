@@ -17,9 +17,25 @@ export function pickShape(shapes: ReadonlyArray<Shape>, point: Point): Shape | u
 export function hitTest(shape: Shape, point: Point): boolean {
   switch (shape.kind) {
     case 'text':
-    case 'emoji':
-      // Both pick anywhere inside their (filled) box.
+      // Picks anywhere inside the (filled) box.
       return pointInRect(point, boundingBoxOf(shape));
+    case 'emoji': {
+      const box = boundingBoxOf(shape);
+      if (!shape.rotation) return pointInRect(point, box);
+      // Inverse-rotate the point about the sticker centre into the box's local
+      // (unrotated) frame, so picking follows the rotated glyph rather than its
+      // axis-aligned bounds.
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      const rad = (-shape.rotation * Math.PI) / 180;
+      const dx = point.x - cx;
+      const dy = point.y - cy;
+      const local = {
+        x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+        y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+      };
+      return pointInRect(local, box);
+    }
     case 'rect': {
       const inside = pointInRect(point, normaliseBox(shape));
       // Filled rects pick anywhere inside; outline-only picks on the stroke (with tolerance).

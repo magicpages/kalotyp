@@ -79,14 +79,16 @@ export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle
   // ----- Category tabs -----
   const tabs = document.createElement('div');
   tabs.className = 'kalotyp-annotate-emoji-tabs';
-  tabs.setAttribute('role', 'tablist');
+  // Plain category-filter buttons (aria-pressed), not an ARIA tablist — there
+  // are no tab panels and search can leave none active, so tab semantics would
+  // mislead assistive tech.
+  tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', 'Emoji categories');
   const tabButtons: HTMLButtonElement[] = [];
   EMOJI_GROUPS.forEach((group, index) => {
     const tab = document.createElement('button');
     tab.type = 'button';
     tab.className = 'kalotyp-annotate-emoji-tab';
-    tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-label', group.label);
     tab.title = group.label;
     // The group's first emoji as the tab icon — same OpenMoji artwork as the
@@ -131,7 +133,7 @@ export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle
   function setActiveGroup(index: number): void {
     activeGroupIndex = index;
     tabButtons.forEach((tab, i) => {
-      tab.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      tab.setAttribute('aria-pressed', i === index ? 'true' : 'false');
     });
     const group = EMOJI_GROUPS[index];
     renderCells(group ? group.emojis : []);
@@ -143,9 +145,9 @@ export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle
       setActiveGroup(activeGroupIndex);
       return;
     }
-    // Searching spans all groups; deselect the tabs so the highlight doesn't
-    // imply the results are scoped to one category.
-    for (const tab of tabButtons) tab.setAttribute('aria-selected', 'false');
+    // Searching spans all groups; clear the active category so the highlight
+    // doesn't imply the results are scoped to one.
+    for (const tab of tabButtons) tab.setAttribute('aria-pressed', 'false');
     const matches: EmojiEntry[] = [];
     for (const group of EMOJI_GROUPS) {
       for (const entry of group.emojis) {

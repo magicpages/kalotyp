@@ -52,6 +52,9 @@ function withSlash(url: string): string {
 
 function assetBase(): string {
   if (assetBaseOverride) return assetBaseOverride;
+  // Cast: `__KALOTYP_EMOJI_BASE__` is an optional host-set global not on the
+  // standard `Window` type; we read it as `unknown` and validate it's a string
+  // below before use.
   const fromGlobal =
     typeof window !== 'undefined'
       ? (window as { __KALOTYP_EMOJI_BASE__?: unknown }).__KALOTYP_EMOJI_BASE__
@@ -147,6 +150,14 @@ export async function ensureEmojiImagesLoaded(shapes: ReadonlyArray<Shape>): Pro
       entry.image.addEventListener('error', () => res(), { once: true });
     });
   });
-  const timeout = new Promise<void>((res) => setTimeout(res, PRELOAD_TIMEOUT_MS));
-  await Promise.race([Promise.all(waits).then(() => undefined), timeout]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((res) => {
+    timer = setTimeout(res, PRELOAD_TIMEOUT_MS);
+  });
+  try {
+    await Promise.race([Promise.all(waits).then(() => undefined), timeout]);
+  } finally {
+    // Don't leave a dangling timer once the artwork has settled.
+    if (timer) clearTimeout(timer);
+  }
 }

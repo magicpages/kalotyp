@@ -198,6 +198,14 @@ describe('hitTest — emoji', () => {
     expect(hitTest(emoji, { x: 90, y: 90 })).toBe(false);
     expect(hitTest(emoji, { x: 200, y: 140 })).toBe(false);
   });
+
+  it('follows the rotated footprint when rotation is non-zero', () => {
+    const rotated: EmojiShape = { ...emoji, rotation: 45 };
+    // The axis-aligned corner is no longer covered by the 45°-rotated square…
+    expect(hitTest(rotated, { x: 100, y: 100 })).toBe(false);
+    // …but a point inside the rotated diamond (outside the AABB) now is.
+    expect(hitTest(rotated, { x: 84, y: 140 })).toBe(true);
+  });
 });
 
 describe('pickShape', () => {

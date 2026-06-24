@@ -11,10 +11,12 @@
  * Default target: packages/ghost/dist/emoji
  */
 import { copyFile, mkdir, rm } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getEmojiCatalogue } from './emoji-source.mjs';
 
-const repoRoot = resolve(import.meta.dirname, '..');
+// `import.meta.dirname` needs Node >=20.11; this works on the repo's >=20.10 floor.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const target = process.argv[2]
   ? resolve(process.argv[2])
   : resolve(repoRoot, 'packages/ghost/dist/emoji');

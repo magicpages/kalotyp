@@ -328,7 +328,7 @@
   box-shadow: var(--kalotyp-focus-shadow);
 }
 
-.kalotyp-annotate-emoji-tab[aria-selected="true"] {
+.kalotyp-annotate-emoji-tab[aria-pressed="true"] {
   background: var(--kalotyp-track);
   border-color: var(--kalotyp-border);
 }

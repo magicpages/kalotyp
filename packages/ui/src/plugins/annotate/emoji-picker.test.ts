@@ -32,7 +32,7 @@ describe('emoji picker', () => {
     expect(tabs.length).toBe(EMOJI_GROUPS.length);
     expect(cells(host).length).toBe(EMOJI_GROUPS[0]?.emojis.length);
     // The active tab is the first one.
-    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[0]?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('gives every cell an accessible label (the emoji name)', () => {
@@ -66,8 +66,8 @@ describe('emoji picker', () => {
     const targetIndex = 3;
     tabs[targetIndex]?.click();
     expect(cells(host).length).toBe(EMOJI_GROUPS[targetIndex]?.emojis.length);
-    expect(tabs[targetIndex]?.getAttribute('aria-selected')).toBe('true');
-    expect(tabs[0]?.getAttribute('aria-selected')).toBe('false');
+    expect(tabs[targetIndex]?.getAttribute('aria-pressed')).toBe('true');
+    expect(tabs[0]?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('filters by name on search and deselects the tabs', () => {
@@ -83,7 +83,7 @@ describe('emoji picker', () => {
     for (const cell of found) {
       expect(cell.getAttribute('aria-label')?.toLowerCase()).toContain('rocket');
     }
-    const selectedTabs = host.querySelectorAll('.kalotyp-annotate-emoji-tab[aria-selected="true"]');
+    const selectedTabs = host.querySelectorAll('.kalotyp-annotate-emoji-tab[aria-pressed="true"]');
     expect(selectedTabs.length).toBe(0);
   });
 

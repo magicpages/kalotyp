@@ -172,6 +172,41 @@ Ghost overrides four CSS custom properties at the `.pintura-editor` scope:
 
 Cited from `pintura.css:1–6`.
 
+## Dark mode
+
+Ghost admin exposes a per-user light/dark preference ("Night Shift"). When it is
+on, Ghost toggles a `dark` class on the document root:
+
+```js
+// ghost/admin/app/services/feature.js
+document.documentElement.classList.toggle('dark', nightShift ?? false);
+```
+
+Kalotyp follows that signal directly — there is no API call. Its stylesheet keys
+the editor's two themeable tokens off the class, out-specifying Ghost's
+`pintura.css` (which otherwise forces dark unconditionally):
+
+```css
+html:not(.dark) .pintura-editor { --color-background: 255,255,255; --color-foreground: 21,23,26;  color-scheme: light; }
+html.dark      .pintura-editor { --color-background: 21,23,26;  --color-foreground: 244,245,246; color-scheme: dark; }
+```
+
+Every internal chrome colour derives from those two tokens via alpha overlays,
+so the whole editor inverts; the dark values match Ghost admin's own `#15171A`
+chrome (`services/ui.js`). Because it is pure CSS, toggling Night Shift while the
+editor is open re-themes it instantly. Outside Ghost (e.g. the playground) the
+root carries no `dark` class, so the editor stays light by default.
+
+## Emoji assets
+
+The annotate emoji tool renders [OpenMoji](https://openmoji.org) SVGs shipped in
+the package under `dist/emoji/`. They load on demand from the **same origin** as
+the bundle, resolved from `/emoji/` by default. If the bundle is served from a
+different path, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
+`setEmojiAssetBase`) to the directory that serves them, and allow that origin
+under `img-src` in any Content Security Policy (CSP). If the artwork can't be
+fetched, the editor falls back to the OS emoji font, so Save always works.
+
 ## Settings the admin reads
 
 Three settings in the database control the integration:

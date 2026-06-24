@@ -4,6 +4,7 @@ import {
   initialAnnotateState,
   type UtilityPlugin,
 } from '@magicpages/kalotyp-core';
+import { ensureEmojiImagesLoaded, resolveEmojiImage } from './emoji-images.js';
 import { mountAnnotateUtility } from './mount.js';
 
 export interface AnnotatePluginOptions {
@@ -41,6 +42,11 @@ export function createAnnotatePlugin(options: AnnotatePluginOptions): UtilityPlu
       });
       return { destroy: () => handle.destroy() };
     },
-    bake: (state, source) => bakeAnnotate({ shapes: state.shapes }, source),
+    bake: async (state, source) => {
+      // Make sure each placed emoji's SVG is loaded so the bake draws the crisp
+      // artwork (not the font fallback); bounded by a timeout inside the loader.
+      await ensureEmojiImagesLoaded(state.shapes);
+      return bakeAnnotate({ shapes: state.shapes }, source, { resolveEmojiImage });
+    },
   };
 }

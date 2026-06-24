@@ -1,12 +1,25 @@
 import { createBakeCanvas, getBakeContext2D } from '../../canvas/bake-canvas.js';
 import type { SourceImage } from '../utility.js';
-import { cssFontString } from './fonts.js';
+import { cssFontString, EMOJI_FONT_STACK } from './fonts.js';
 import { tracePath } from './smooth.js';
 import { assertNever, normalizeTextShape, type Shape } from './state.js';
 import { lineOffset, TEXT_LINE_HEIGHT, textLines } from './text-layout.js';
 
 export interface AnnotateBakeInput {
   readonly shapes: ReadonlyArray<Shape>;
+}
+
+/**
+ * Resolve an emoji character to a drawable image (its vector artwork). Returns
+ * `null` when no image is available yet, so the caller falls back to the OS
+ * emoji font. Supplied by the UI layer, which owns the async image cache —
+ * keeping this module DOM-free (it just calls `drawImage` on whatever source it
+ * is handed).
+ */
+export type ResolveEmojiImage = (emoji: string) => CanvasImageSource | null;
+
+export interface PaintShapeOptions {
+  readonly resolveEmojiImage?: ResolveEmojiImage;
 }
 
 /** Re-exported from fonts.ts; the system stack is the default font key's value. */
@@ -49,6 +62,7 @@ export async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<v
 export async function bakeAnnotate(
   state: AnnotateBakeInput,
   source: SourceImage,
+  opts?: PaintShapeOptions,
 ): Promise<SourceImage> {
   if (state.shapes.length === 0) return source;
 
@@ -62,7 +76,7 @@ export async function bakeAnnotate(
   ctx.drawImage(source.bitmap, 0, 0, source.width, source.height);
 
   for (const shape of state.shapes) {
-    paintShape(ctx, shape);
+    paintShape(ctx, shape, opts);
   }
 
   return {
@@ -77,6 +91,7 @@ export async function bakeAnnotate(
 export function paintShape(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   shape: Shape,
+  opts?: PaintShapeOptions,
 ): void {
   switch (shape.kind) {
     case 'text':
@@ -97,9 +112,42 @@ export function paintShape(
     case 'highlight':
       paintHighlight(ctx, shape);
       return;
+    case 'emoji':
+      paintEmoji(ctx, shape, opts?.resolveEmojiImage);
+      return;
     default:
       assertNever(shape);
   }
+}
+
+function paintEmoji(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  shape: Shape & { kind: 'emoji' },
+  resolveEmojiImage?: ResolveEmojiImage,
+): void {
+  // `shape.x, shape.y` is the box's top-left; the glyph fills the square box.
+  const image = resolveEmojiImage?.(shape.emoji) ?? null;
+  ctx.save();
+  if (shape.rotation) {
+    // Rotate about the box centre so the sticker spins in place.
+    const cx = shape.x + shape.size / 2;
+    const cy = shape.y + shape.size / 2;
+    ctx.translate(cx, cy);
+    ctx.rotate((shape.rotation * Math.PI) / 180);
+    ctx.translate(-cx, -cy);
+  }
+  if (image) {
+    // Vector artwork (OpenMoji SVG) rasterised at the box size — crisp at any size.
+    ctx.drawImage(image, shape.x, shape.y, shape.size, shape.size);
+  } else {
+    // Fallback: the OS emoji font (used before the SVG loads, in workers without
+    // a resolver, or if the artwork is unavailable). Colour comes from the font.
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = `${shape.size}px ${EMOJI_FONT_STACK}`;
+    ctx.fillText(shape.emoji, shape.x, shape.y);
+  }
+  ctx.restore();
 }
 
 function paintText(

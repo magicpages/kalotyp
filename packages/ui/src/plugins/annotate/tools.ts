@@ -22,6 +22,7 @@ import {
   addShape,
   decimatePoints,
   type EllipseShape,
+  type EmojiShape,
   type FreehandShape,
   HIGHLIGHT_DEFAULT_COLOR,
   HIGHLIGHT_DEFAULT_STROKE,
@@ -318,6 +319,51 @@ export function startFreehandGesture(
         strokeWidth,
       };
       ctx.store.update((current) => ({ ...addShape(current, shape), nextShapeNumber }));
+      ctx.commit();
+    },
+    onCancel() {
+      ctx.setLiveShape(null);
+    },
+  };
+}
+
+/**
+ * Emoji sticker placement. Unlike the drag-to-create tools, an emoji is placed
+ * on press (centred on the pointer at the armed size) and a drag before release
+ * just repositions it — so a plain tap is a valid placement, and a press-drag
+ * lets you fine-tune the drop point in one gesture. The committed sticker is
+ * selected so its resize handles are immediately available.
+ */
+export function startEmojiGesture(
+  ctx: ToolGestureContext,
+  origin: PointerEvent,
+  spec: { emoji: string; size: number },
+): DragHandlers {
+  const state = ctx.store.get();
+  const { id, nextShapeNumber } = mintShapeId(state);
+  const { emoji, size } = spec;
+  const draftAt = (clientPoint: { clientX: number; clientY: number }): EmojiShape => {
+    const center = ctx.toImageSpace(clientPoint);
+    return {
+      id,
+      kind: 'emoji',
+      x: Math.round(center.x - size / 2),
+      y: Math.round(center.y - size / 2),
+      emoji,
+      size,
+      rotation: 0,
+    };
+  };
+  let last = draftAt(origin);
+  ctx.setLiveShape(last);
+  return {
+    onMove(point) {
+      last = draftAt(point);
+      ctx.setLiveShape(last);
+    },
+    onCommit() {
+      ctx.setLiveShape(null);
+      ctx.store.update((current) => ({ ...addShape(current, last), nextShapeNumber }));
       ctx.commit();
     },
     onCancel() {

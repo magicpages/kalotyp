@@ -24,6 +24,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "size": "node ./scripts/check-bundle-size.mjs",
+    "gen:emoji": "node ./scripts/gen-emoji-data.mjs",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish"
@@ -31,7 +32,9 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
     "@changesets/cli": "2.31.0",
-    "typescript": "6.0.3"
+    "openmoji": "^17.0.0",
+    "typescript": "6.0.3",
+    "unicode-emoji-json": "^0.9.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

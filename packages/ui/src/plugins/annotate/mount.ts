@@ -23,6 +23,7 @@ import {
   boundingBoxOf,
   computeViewport,
   createCenteredShape,
+  defaultEmojiSize,
   deleteShape,
   isKeyboardPlaceableKind,
   mintShapeId,
@@ -43,6 +44,8 @@ import {
   type ViewportController,
 } from '@magicpages/kalotyp-core';
 import { buildCoordInputs } from './coord-inputs.js';
+import { onEmojiImageLoad, resolveEmojiImage } from './emoji-images.js';
+import { buildEmojiPicker, type EmojiPickerHandle } from './emoji-picker.js';
 import { ensureAnnotateFontsLoaded } from './fonts-loader.js';
 import { type AnnotatePanel, buildAnnotatePanel } from './panel.js';
 import { attachPointerDrag, clientToElement, type DragHandlers } from './pointer-drag.js';
@@ -54,6 +57,7 @@ import {
   startArrowGesture,
   startBodyMoveGesture,
   startEllipseGesture,
+  startEmojiGesture,
   startFreehandGesture,
   startRectGesture,
   type ToolGestureContext,
@@ -107,12 +111,23 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       : computeViewport(stageDims, imageSize);
   }
 
+  // Shared paint options: the emoji resolver lets `paintShape` draw crisp SVG
+  // artwork (preview == bake) and fall back to the OS font until it loads.
+  const paintOpts = { resolveEmojiImage };
+
   function paintAll(): void {
     const rect = stage.container.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     paintImageLayer(stage.imageCanvas, source, rect.width, rect.height, viewport);
-    paintShapesLayer(stage.shapesCanvas, store.get().shapes, rect.width, rect.height, viewport);
-    paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport);
+    paintShapesLayer(
+      stage.shapesCanvas,
+      store.get().shapes,
+      rect.width,
+      rect.height,
+      viewport,
+      paintOpts,
+    );
+    paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport, paintOpts);
     selectionLayer.update(shapeForHandles(store.get()), viewport);
     repositionOpenEditor();
   }
@@ -144,7 +159,14 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   function paintShapes(): void {
     const rect = stage.container.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    paintShapesLayer(stage.shapesCanvas, store.get().shapes, rect.width, rect.height, viewport);
+    paintShapesLayer(
+      stage.shapesCanvas,
+      store.get().shapes,
+      rect.width,
+      rect.height,
+      viewport,
+      paintOpts,
+    );
   }
 
   function paintLive(): void {
@@ -153,7 +175,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     if (liveMarquee !== null) {
       paintMarqueeLayer(stage.liveCanvas, liveMarquee, rect.width, rect.height, viewport);
     } else {
-      paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport);
+      paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport, paintOpts);
     }
   }
 
@@ -254,6 +276,8 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
         startTextGesture(event);
         return null;
       }
+      case 'emoji':
+        return startEmojiToolGesture(event);
       default:
         return null;
     }
@@ -316,6 +340,30 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
         setLiveMarquee(null);
       },
     };
+  }
+
+  /**
+   * Emoji tool pointer-down. Clicking an existing emoji selects and moves it
+   * (a body drag) rather than stacking a new one on top — mirroring how the
+   * text tool re-targets existing text. Clicking empty space places a fresh
+   * sticker at the armed glyph + default size.
+   */
+  function startEmojiToolGesture(event: PointerEvent): DragHandlers {
+    const state = store.get();
+    const image = toImageSpace(event);
+    const picked = pickShape(state.shapes, image);
+    if (picked?.kind === 'emoji') {
+      if (state.selectedId !== picked.id) {
+        store.update((current) => selectShape(current, picked.id));
+      }
+      return startBodyMoveGesture(toolContext, event, picked.id, picked, translateShape, (next) =>
+        store.update((current) => replaceShape(current, next)),
+      );
+    }
+    return startEmojiGesture(toolContext, event, {
+      emoji: state.currentStyle.emoji,
+      size: defaultEmojiSize({ width: source.width, height: source.height }),
+    });
   }
 
   function startTextGesture(event: PointerEvent): void {
@@ -417,17 +465,20 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   }
 
   /**
-   * Show the text controls when the text tool is active or a text shape is
-   * selected. When a text shape is selected, the controls reflect that shape's
-   * attributes; otherwise they reflect the current style for new text.
+   * Reflect the active tool / selection in the panel's per-mode controls. Text
+   * mode reveals the font row; emoji mode hides the colour + stroke controls.
+   * When a text shape is selected, the controls mirror that shape's attributes;
+   * otherwise they reflect the current style for new shapes.
    */
-  function syncTextControls(state: AnnotateState): void {
-    const selectedText = state.selectedId
-      ? state.shapes.find((s) => s.id === state.selectedId && s.kind === 'text')
+  function syncToolControls(state: AnnotateState): void {
+    const selected = state.selectedId
+      ? state.shapes.find((s) => s.id === state.selectedId)
       : undefined;
+    const selectedText = selected?.kind === 'text' ? selected : undefined;
     const showText = state.activeTool === 'text' || selectedText !== undefined;
-    panel.setTextControlsVisible(showText);
-    if (selectedText && selectedText.kind === 'text') {
+    const showEmoji = state.activeTool === 'emoji' || selected?.kind === 'emoji';
+    panel.setControlsMode({ text: showText, emoji: showEmoji });
+    if (selectedText) {
       panel.setStyle({
         ...state.currentStyle,
         fontFamily: selectedText.fontFamily,
@@ -470,6 +521,24 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     commit();
   }
 
+  /**
+   * Arm an emoji as the current sticker glyph (so the next placement uses it)
+   * and, if an emoji shape is selected, swap that shape's glyph too. Picking
+   * closes the picker so the canvas is free to place the armed emoji.
+   */
+  function applyEmojiSelection(char: string): void {
+    store.update((current) => {
+      let next = setStyle(current, { emoji: char });
+      const selected = selectedShapeOf(current);
+      if (selected?.kind === 'emoji') {
+        next = replaceShape(next, { ...selected, emoji: char });
+      }
+      return next;
+    });
+    commit();
+    emojiPicker.hide();
+  }
+
   // ----- Coordinate inputs (keyboard-only positioning) -----
   // Built first so the panel can host the row in its DOM rhythm. The
   // row is store-free; each typed value commit hands the new shape
@@ -482,6 +551,19 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     },
   });
 
+  // ----- Emoji sticker picker -----
+  // A self-contained overlay anchored over the stage. Opens when the emoji tool
+  // is selected; picking arms the glyph and closes it (the canvas is then free
+  // to place the sticker). Closing the picker exits to the select tool.
+  const emojiPicker: EmojiPickerHandle = buildEmojiPicker({
+    host: stage.container,
+    onSelect: (char) => applyEmojiSelection(char),
+    onClose: () => {
+      emojiPicker.hide();
+      store.update((current) => setActiveTool(current, 'select'));
+    },
+  });
+
   // ----- Panel -----
   const initialState = store.get();
   const panel: AnnotatePanel = buildAnnotatePanel({
@@ -489,7 +571,13 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     initialStyle: initialState.currentStyle,
     canDelete: initialState.selectedId !== null,
     coordInputs: coordInputs.container,
-    onSelectTool: (tool) => store.update((current) => setActiveTool(current, tool)),
+    onSelectTool: (tool) => {
+      store.update((current) => setActiveTool(current, tool));
+      // Selecting the emoji tool opens the picker (re-clicking it reopens after
+      // a pick closed it); switching to any other tool closes it.
+      if (tool === 'emoji') emojiPicker.show();
+      else emojiPicker.hide();
+    },
     onColorChange: (color) => {
       store.update((current) => {
         let next = setStyle(current, { color });
@@ -535,8 +623,15 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   // metrics, so without this the committed text renders with a fallback face
   // and only corrects (appears to "jump") on the next interaction.
   const stopFontWatch = ensureAnnotateFontsLoaded(() => paintShapes());
-  // Reflect the initial tool/selection in the text-control visibility.
-  syncTextControls(initialState);
+  // Repaint when emoji artwork finishes loading so a placed sticker swaps from
+  // the font fallback to the crisp SVG without needing another interaction.
+  const stopEmojiWatch = onEmojiImageLoad(() => {
+    paintShapes();
+    paintLive();
+  });
+  // Reflect the initial tool/selection in the per-mode control visibility.
+  syncToolControls(initialState);
+  if (initialState.activeTool === 'emoji') emojiPicker.show();
   // Seed the per-tool hit-area cursor (see annotate.css).
   stage.container.dataset.tool = initialState.activeTool;
 
@@ -588,15 +683,18 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       lastTool = next.activeTool;
       panel.setActiveTool(next.activeTool);
       // Drives the per-tool hit-area cursor (see annotate.css): `select` →
-      // default arrow, `text` → I-beam, others → crosshair.
+      // default arrow, `text` → I-beam, `emoji` → copy, others → crosshair.
       stage.container.dataset.tool = next.activeTool;
+      // Any programmatic switch away from the emoji tool also dismisses the
+      // picker (e.g. committing text flips back to select).
+      if (next.activeTool !== 'emoji') emojiPicker.hide();
     }
     if (next.currentStyle !== lastStyle) {
       lastStyle = next.currentStyle;
       panel.setStyle(next.currentStyle);
     }
     if (selectionChanged || toolChanged) {
-      syncTextControls(next);
+      syncToolControls(next);
     }
     selectionLayer.update(shapeForHandles(next), viewport);
     // Keep the per-selection coordinate inputs in sync.
@@ -678,11 +776,13 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     destroy() {
       document.removeEventListener('keydown', onKeyDown, true);
       stopFontWatch();
+      stopEmojiWatch();
       removeHitDrag();
       unsubscribe();
       unsubscribeViewport?.();
       resizeObserver.disconnect();
       textEditor.destroy();
+      emojiPicker.destroy();
       selectionLayer.destroy();
       stage.container.remove();
       panel.container.remove();
@@ -708,6 +808,10 @@ function applyColorToShape(shape: Shape, color: string): Shape {
     case 'freehand':
     case 'highlight':
       return { ...shape, color };
+    case 'emoji':
+      // An emoji carries its own colour; the colour controls are hidden in
+      // emoji mode, so this is unreachable — return it untouched.
+      return shape;
   }
 }
 
@@ -724,6 +828,9 @@ function applyStrokeWidthToShape(shape: Shape, strokeWidth: number): Shape {
     case 'freehand':
     case 'highlight':
       return { ...shape, strokeWidth };
+    case 'emoji':
+      // No stroke for emoji stickers; the Width control is hidden in emoji mode.
+      return shape;
   }
 }
 
@@ -788,7 +895,7 @@ function isEditableTarget(target: Element | null): boolean {
  * announcement. Each kind reads as a noun in the announcement
  * sentence — "Rectangle placed at centre. Use arrow keys…".
  */
-function labelForKind(kind: 'rect' | 'ellipse' | 'arrow' | 'text'): string {
+function labelForKind(kind: 'rect' | 'ellipse' | 'arrow' | 'emoji'): string {
   switch (kind) {
     case 'rect':
       return 'Rectangle';
@@ -796,7 +903,7 @@ function labelForKind(kind: 'rect' | 'ellipse' | 'arrow' | 'text'): string {
       return 'Ellipse';
     case 'arrow':
       return 'Arrow';
-    case 'text':
-      return 'Text annotation';
+    case 'emoji':
+      return 'Emoji';
   }
 }

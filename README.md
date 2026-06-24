@@ -50,6 +50,21 @@ air-gapped install), the editor falls back to the system font and keeps working;
 saved images bake with whatever font is available. To allow the fonts under a
 content-security policy, permit `fonts.bunny.net` in `style-src`/`font-src`.
 
+The emoji sticker tool renders emojis as [OpenMoji](https://openmoji.org)
+vector artwork (so they stay crisp at any size, unlike the platform's bitmap
+emoji font). The SVGs ship **with the package** as static files under
+`dist/emoji/` and are loaded on demand from the **same origin** as the bundle —
+no third-party CDN, and only the emojis you actually browse or place are
+fetched. They're served from `/emoji/` by default; if your bundle lives
+elsewhere, set `window.__KALOTYP_EMOJI_BASE__` (or call `setEmojiAssetBase`) to
+the directory that serves them, and allow that origin under `img-src` in your
+CSP. If an emoji's artwork can't be loaded, the editor falls back to the OS
+emoji font so Save still works.
+
+OpenMoji is licensed under
+[CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/); the bundled
+emoji SVGs remain under that licence. Kalotyp's own code is MIT.
+
 ## Repository layout
 
 ```

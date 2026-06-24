@@ -5,7 +5,7 @@ import {
   rectFromHandleDrag,
   selectionHandlePositions,
 } from './geometry.js';
-import type { ArrowShape, FreehandShape, RectShape, TextShape } from './state.js';
+import type { ArrowShape, EmojiShape, FreehandShape, RectShape, TextShape } from './state.js';
 import { TEXT_LINE_HEIGHT } from './text-layout.js';
 
 function makeText(overrides: Partial<TextShape>): TextShape {
@@ -84,6 +84,19 @@ describe('boundingBoxOf', () => {
         strokeWidth: 1,
       } as FreehandShape),
     ).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+  });
+
+  it('returns the square box for an emoji shape', () => {
+    const emoji: EmojiShape = {
+      id: 'e',
+      kind: 'emoji',
+      x: 30,
+      y: 40,
+      emoji: '😀',
+      size: 96,
+      rotation: 0,
+    };
+    expect(boundingBoxOf(emoji)).toEqual({ x: 30, y: 40, width: 96, height: 96 });
   });
 
   it('measures the natural text extent and a single-line height for short text', () => {

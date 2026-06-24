@@ -25,7 +25,9 @@ import {
   Pencil,
   Plus as PlusIcon,
   Redo2,
+  Search as SearchIcon,
   Settings as SettingsIcon,
+  Smile as SmileIcon,
   Square,
   Trash2,
   Type as TypeIcon,
@@ -89,7 +91,9 @@ export type IconName =
   | 'italic'
   | 'alignLeft'
   | 'alignCenter'
-  | 'alignRight';
+  | 'alignRight'
+  | 'emoji'
+  | 'search';
 
 function resolve(name: IconName): IconNode {
   switch (name) {
@@ -143,6 +147,10 @@ function resolve(name: IconName): IconNode {
       return AlignCenter as IconNode;
     case 'alignRight':
       return AlignRight as IconNode;
+    case 'emoji':
+      return SmileIcon as IconNode;
+    case 'search':
+      return SearchIcon as IconNode;
   }
 }
 

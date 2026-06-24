@@ -20,6 +20,8 @@ import {
   type AnnotateState,
   type ArrowShape,
   boundingBoxOf,
+  EMOJI_MIN_SIZE,
+  normalizeAngle,
   type Rect,
   rectFromHandleDrag,
   replaceShape,
@@ -31,6 +33,11 @@ import {
 import type { DragHandlers } from './pointer-drag.js';
 import { attachPointerDrag } from './pointer-drag.js';
 import type { ToolGestureContext } from './tools.js';
+
+/** Corner handles shown for emoji stickers (they resize uniformly — no edges). */
+const EMOJI_CORNER_HANDLES: ReadonlyArray<SelectionHandle> = ['tl', 'tr', 'bl', 'br'];
+/** Distance (display px) the rotate handle sits beyond the box's top edge. */
+const ROTATE_HANDLE_OFFSET = 24;
 
 /**
  * Build and own the selection-handle DOM. The returned object exposes
@@ -89,7 +96,19 @@ export function buildSelectionLayer(options: SelectionLayerOptions): SelectionLa
     );
   }
 
+  // Dedicated rotate handle for emoji stickers — orbits above the box.
+  const rotateHandle = document.createElement('button');
+  rotateHandle.type = 'button';
+  rotateHandle.className = 'kalotyp-annotate-rotate-handle';
+  rotateHandle.setAttribute('aria-label', 'Rotate');
+  rotateHandle.tabIndex = -1;
+  rotateHandle.style.display = 'none';
+  host.appendChild(rotateHandle);
+  cleanups.push(attachPointerDrag(rotateHandle, (event) => startRotateGesture(toolContext, event)));
+
   function update(shape: Shape | null, viewport: Viewport): void {
+    // The rotate handle is emoji-only; hide it unless an emoji branch re-shows it.
+    rotateHandle.style.display = 'none';
     if (!shape) {
       hideAll(handleEls);
       return;
@@ -115,6 +134,27 @@ export function buildSelectionLayer(options: SelectionLayerOptions): SelectionLa
       hideAll(handleEls);
       return;
     }
+    if (shape.kind === 'emoji') {
+      // Emoji stickers scale uniformly, so only the four corner handles show.
+      hideAll(handleEls);
+      const positions = selectionHandlePositions(boundingBoxOf(shape));
+      for (const direction of EMOJI_CORNER_HANDLES) {
+        const handle = handleEls.get(direction);
+        if (handle) positionHandle(handle, imageToDisplay(positions[direction], viewport));
+      }
+      // Rotate handle orbits above the box at the sticker's current angle.
+      const center = imageToDisplay(
+        { x: shape.x + shape.size / 2, y: shape.y + shape.size / 2 },
+        viewport,
+      );
+      const radius = (shape.size / 2) * viewport.scale + ROTATE_HANDLE_OFFSET;
+      const theta = (shape.rotation * Math.PI) / 180;
+      positionHandle(rotateHandle, {
+        x: center.x + radius * Math.sin(theta),
+        y: center.y - radius * Math.cos(theta),
+      });
+      return;
+    }
     const box = boundingBoxOf(shape);
     const handlePositions = selectionHandlePositions(box);
     for (const direction of ALL_SELECTION_HANDLES) {
@@ -128,6 +168,7 @@ export function buildSelectionLayer(options: SelectionLayerOptions): SelectionLa
     for (const cleanup of cleanups) cleanup();
     for (const [, button] of handleEls) button.remove();
     handleEls.clear();
+    rotateHandle.remove();
   }
 
   return { update, destroy };
@@ -163,6 +204,46 @@ function hideAll(handles: Map<SelectionHandle, HTMLButtonElement>): void {
  * Returns `null` if no shape is selected when the handle is pressed
  * (defensive — UI should hide handles in that case).
  */
+/**
+ * The rotation (degrees, CW) that aims the box's "up" edge toward `pointer`,
+ * about the box `center`. Pointer directly above the centre → 0°. Exported so
+ * the angle math can be unit-tested without a live gesture.
+ */
+export function emojiRotationFromPointer(
+  center: { x: number; y: number },
+  pointer: { x: number; y: number },
+): number {
+  const deg = (Math.atan2(pointer.y - center.y, pointer.x - center.x) * 180) / Math.PI + 90;
+  return normalizeAngle(deg);
+}
+
+/**
+ * Drag-to-rotate gesture for the emoji rotate handle. Rotates about the box
+ * centre; holding Shift snaps to 15° increments. Returns `null` if the selected
+ * shape isn't an emoji (defensive — the handle only shows for emoji).
+ */
+function startRotateGesture(ctx: ToolGestureContext, origin: PointerEvent): DragHandlers | null {
+  const state = ctx.store.get();
+  const selected = state.shapes.find((shape) => shape.id === state.selectedId);
+  if (selected?.kind !== 'emoji') return null;
+  const initial = selected;
+  const center = { x: initial.x + initial.size / 2, y: initial.y + initial.size / 2 };
+  void origin;
+  return {
+    onMove(point) {
+      let rotation = emojiRotationFromPointer(center, ctx.toImageSpace(point));
+      if (point.shiftKey) rotation = normalizeAngle(Math.round(rotation / 15) * 15);
+      ctx.store.update((cur) => replaceShape(cur, { ...initial, rotation: Math.round(rotation) }));
+    },
+    onCommit() {
+      ctx.commit();
+    },
+    onCancel() {
+      ctx.store.update((cur) => replaceShape(cur, initial));
+    },
+  };
+}
+
 function startHandleResizeGesture(
   ctx: ToolGestureContext,
   direction: SelectionHandle,
@@ -229,6 +310,25 @@ export function applyHandleDrag(
       // control). The selection layer hides text handles, so this is
       // unreachable; return unchanged for exhaustiveness.
       return shape;
+    case 'emoji': {
+      // Uniform square resize: the corner opposite the dragged handle stays
+      // anchored, and the box edge follows the larger pointer-axis delta so it
+      // never distorts. Only corners are shown; edge handles no-op.
+      const corner =
+        direction === 'tl' || direction === 'tr' || direction === 'bl' || direction === 'br';
+      if (!corner) return shape;
+      const { x, y, size } = shape;
+      const right = x + size;
+      const bottom = y + size;
+      const anchorRight = direction === 'tl' || direction === 'bl';
+      const anchorBottom = direction === 'tl' || direction === 'tr';
+      const dx = anchorRight ? right - image.x : image.x - x;
+      const dy = anchorBottom ? bottom - image.y : image.y - y;
+      const nextSize = Math.max(EMOJI_MIN_SIZE, Math.round(Math.max(dx, dy)));
+      const nextX = anchorRight ? right - nextSize : x;
+      const nextY = anchorBottom ? bottom - nextSize : y;
+      return { ...shape, x: nextX, y: nextY, size: nextSize };
+    }
     case 'freehand':
     case 'highlight': {
       // Path shapes scale around their bounding-box centre by the

@@ -13,6 +13,8 @@
  *   - arrow → Start X, Start Y, End X, End Y (the two endpoints).
  *   - text → X, Y (anchor only; size is driven by the font-size
  *     control, and the inline editor handles the text content).
+ *   - emoji → X, Y, Size, Angle (the square sticker box; Size and Angle are the
+ *     keyboard equivalents of dragging a corner / the rotate handle).
  *
  * One row instance is reused across selections; it rebuilds its
  * fields when the selected shape's kind changes. The mount layer
@@ -20,12 +22,15 @@
  * each change so the inputs reflect the live geometry.
  */
 
-import type {
-  ArrowShape,
-  EllipseShape,
-  RectShape,
-  Shape,
-  TextShape,
+import {
+  type ArrowShape,
+  type EllipseShape,
+  EMOJI_MIN_SIZE,
+  type EmojiShape,
+  normalizeAngle,
+  type RectShape,
+  type Shape,
+  type TextShape,
 } from '@magicpages/kalotyp-core';
 
 export interface CoordInputsOptions {
@@ -57,7 +62,14 @@ export type ShapeCoordEdit =
       readonly x2: number;
       readonly y2: number;
     }
-  | { readonly kind: 'text'; readonly x: number; readonly y: number };
+  | { readonly kind: 'text'; readonly x: number; readonly y: number }
+  | {
+      readonly kind: 'emoji';
+      readonly x: number;
+      readonly y: number;
+      readonly size: number;
+      readonly rotation: number;
+    };
 
 export interface CoordInputsHandle {
   readonly container: HTMLDivElement;
@@ -71,6 +83,8 @@ interface FieldSpec {
   readonly label: string;
   readonly min?: number;
   readonly max?: number;
+  /** Unit named in the accessible label; defaults to pixels. */
+  readonly unit?: string;
 }
 
 const RECT_FIELDS: ReadonlyArray<FieldSpec> = [
@@ -92,6 +106,14 @@ const TEXT_FIELDS: ReadonlyArray<FieldSpec> = [
   { id: 'y', label: 'Y' },
 ];
 
+const EMOJI_FIELDS: ReadonlyArray<FieldSpec> = [
+  { id: 'x', label: 'X' },
+  { id: 'y', label: 'Y' },
+  // Keep the control's floor in sync with the clamp in `applyCoordEdit`.
+  { id: 'size', label: 'Size', min: EMOJI_MIN_SIZE },
+  { id: 'rotation', label: 'Angle', unit: 'degrees' },
+];
+
 /**
  * Build a single per-selection coordinate-input row. The row reuses
  * the same `kalotyp-annotate-coords-*` class set across shape kinds
@@ -105,10 +127,10 @@ export function buildCoordInputs(options: CoordInputsOptions): CoordInputsHandle
   container.hidden = true;
 
   let activeShape: Shape | null = null;
-  let activeKind: 'rect' | 'ellipse' | 'arrow' | 'text' | null = null;
+  let activeKind: 'rect' | 'ellipse' | 'arrow' | 'text' | 'emoji' | null = null;
   const inputs = new Map<string, HTMLInputElement>();
 
-  function rebuildFor(kind: 'rect' | 'ellipse' | 'arrow' | 'text'): void {
+  function rebuildFor(kind: 'rect' | 'ellipse' | 'arrow' | 'text' | 'emoji'): void {
     container.replaceChildren();
     inputs.clear();
     const fields = fieldsFor(kind);
@@ -128,7 +150,7 @@ export function buildCoordInputs(options: CoordInputsOptions): CoordInputsHandle
       input.inputMode = 'numeric';
       if (spec.min !== undefined) input.min = String(spec.min);
       if (spec.max !== undefined) input.max = String(spec.max);
-      input.setAttribute('aria-label', `${spec.label} (pixels)`);
+      input.setAttribute('aria-label', `${spec.label} (${spec.unit ?? 'pixels'})`);
       input.addEventListener('change', onAnyInputChange);
 
       wrapper.appendChild(labelSpan);
@@ -171,6 +193,13 @@ export function buildCoordInputs(options: CoordInputsOptions): CoordInputsHandle
       case 'text': {
         setVal('x', shape.x);
         setVal('y', shape.y);
+        return;
+      }
+      case 'emoji': {
+        setVal('x', shape.x);
+        setVal('y', shape.y);
+        setVal('size', shape.size);
+        setVal('rotation', shape.rotation);
         return;
       }
       default:
@@ -223,6 +252,14 @@ export function buildCoordInputs(options: CoordInputsOptions): CoordInputsHandle
         if (![x, y].every(Number.isFinite)) return null;
         return { kind: 'text', x, y };
       }
+      case 'emoji': {
+        const x = Math.round(num('x'));
+        const y = Math.round(num('y'));
+        const size = Math.round(num('size'));
+        const rotation = Math.round(num('rotation'));
+        if (![x, y, size, rotation].every(Number.isFinite)) return null;
+        return { kind: 'emoji', x, y, size, rotation };
+      }
       default:
         return null;
     }
@@ -265,7 +302,9 @@ export function buildCoordInputs(options: CoordInputsOptions): CoordInputsHandle
   };
 }
 
-function fieldsFor(kind: 'rect' | 'ellipse' | 'arrow' | 'text'): ReadonlyArray<FieldSpec> {
+function fieldsFor(
+  kind: 'rect' | 'ellipse' | 'arrow' | 'text' | 'emoji',
+): ReadonlyArray<FieldSpec> {
   switch (kind) {
     case 'rect':
     case 'ellipse':
@@ -274,6 +313,8 @@ function fieldsFor(kind: 'rect' | 'ellipse' | 'arrow' | 'text'): ReadonlyArray<F
       return ARROW_FIELDS;
     case 'text':
       return TEXT_FIELDS;
+    case 'emoji':
+      return EMOJI_FIELDS;
   }
 }
 
@@ -315,6 +356,17 @@ export function applyCoordEdit(shape: Shape, edit: ShapeCoordEdit): Shape {
     case 'text': {
       if (edit.kind !== 'text') return shape;
       const next: TextShape = { ...shape, x: edit.x, y: edit.y };
+      return next;
+    }
+    case 'emoji': {
+      if (edit.kind !== 'emoji') return shape;
+      const next: EmojiShape = {
+        ...shape,
+        x: edit.x,
+        y: edit.y,
+        size: Math.max(EMOJI_MIN_SIZE, edit.size),
+        rotation: normalizeAngle(edit.rotation),
+      };
       return next;
     }
     default:

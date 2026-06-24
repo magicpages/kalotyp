@@ -16,7 +16,13 @@
  * the bake output (per shape).
  */
 
-import { paintShape, type Shape, type SourceImage, type Viewport } from '@magicpages/kalotyp-core';
+import {
+  type PaintShapeOptions,
+  paintShape,
+  type Shape,
+  type SourceImage,
+  type Viewport,
+} from '@magicpages/kalotyp-core';
 
 /**
  * Resize the canvas's backing store to the stage CSS pixels × DPR
@@ -75,6 +81,7 @@ export function paintShapesLayer(
   stageWidth: number,
   stageHeight: number,
   viewport: Viewport,
+  opts?: PaintShapeOptions,
 ): void {
   const ctx = prepareCanvas(canvas, stageWidth, stageHeight);
   if (!ctx) return;
@@ -83,7 +90,7 @@ export function paintShapesLayer(
   ctx.translate(viewport.displayRect.x, viewport.displayRect.y);
   ctx.scale(viewport.scale, viewport.scale);
   for (const shape of shapes) {
-    paintShape(ctx, shape);
+    paintShape(ctx, shape, opts);
   }
   ctx.restore();
 }
@@ -99,6 +106,7 @@ export function paintLiveLayer(
   stageWidth: number,
   stageHeight: number,
   viewport: Viewport,
+  opts?: PaintShapeOptions,
 ): void {
   const ctx = prepareCanvas(canvas, stageWidth, stageHeight);
   if (!ctx) return;
@@ -106,7 +114,7 @@ export function paintLiveLayer(
   ctx.save();
   ctx.translate(viewport.displayRect.x, viewport.displayRect.y);
   ctx.scale(viewport.scale, viewport.scale);
-  paintShape(ctx, shape);
+  paintShape(ctx, shape, opts);
   ctx.restore();
 }
 

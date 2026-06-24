@@ -20,6 +20,24 @@ function serveKalotypBundle(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ?? '';
+        // Emoji artwork ships next to the bundle (packages/ghost/dist/emoji);
+        // serve it the same same-origin way Ghost would.
+        const emojiMatch = url.match(/^\/emoji\/([A-Za-z0-9-]+)\.svg(?:\?.*)?$/);
+        if (emojiMatch) {
+          const svgPath = resolve(distDir, 'emoji', `${emojiMatch[1]}.svg`);
+          try {
+            await stat(svgPath);
+          } catch {
+            res.statusCode = 404;
+            res.end('Emoji not found — run `pnpm --filter @magicpages/kalotyp build`.');
+            return;
+          }
+          const svg = await readFile(svgPath);
+          res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(svg);
+          return;
+        }
         const match = url.match(/^\/kalotyp\.(js|css)(?:\?.*)?$/);
         if (!match) return next();
         const ext = match[1];

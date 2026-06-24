@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { readFile, stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 
-const repoRoot = resolve(import.meta.dirname, '..');
+// `import.meta.dirname` needs Node >=20.11; this works on the repo's >=20.10 floor.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = resolve(repoRoot, 'packages/ghost/dist');
 
 const BUDGET_GZIP_KB = 300;

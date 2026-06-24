@@ -6,6 +6,7 @@
 import type {
   ArrowShape,
   EllipseShape,
+  EmojiShape,
   RectShape,
   Shape,
   TextShape,
@@ -62,6 +63,16 @@ const TEXT: TextShape = {
   fontStyle: 'normal',
 };
 
+const EMOJI: EmojiShape = {
+  id: 'em',
+  kind: 'emoji',
+  x: 40,
+  y: 60,
+  emoji: '😀',
+  size: 96,
+  rotation: 0,
+};
+
 describe('coord-inputs row (Phase 6.3 keyboard placement)', () => {
   afterEach(() => {
     document.body.replaceChildren();
@@ -80,6 +91,7 @@ describe('coord-inputs row (Phase 6.3 keyboard placement)', () => {
     ['ellipse', ELLIPSE, ['Left (pixels)', 'Top (pixels)', 'Width (pixels)', 'Height (pixels)']],
     ['arrow', ARROW, ['Start X (pixels)', 'Start Y (pixels)', 'End X (pixels)', 'End Y (pixels)']],
     ['text', TEXT, ['X (pixels)', 'Y (pixels)']],
+    ['emoji', EMOJI, ['X (pixels)', 'Y (pixels)', 'Size (pixels)', 'Angle (degrees)']],
   ] as const)('renders the right field set and labels for %s', (_kind, shape, expectedLabels) => {
     const handle = buildCoordInputs({ onShapeChanged: () => {} });
     document.body.appendChild(handle.container);
@@ -180,5 +192,33 @@ describe('applyCoordEdit', () => {
 
   it('returns the original shape when the edit kind does not match', () => {
     expect(applyCoordEdit(RECT, { kind: 'arrow', x1: 0, y1: 0, x2: 0, y2: 0 })).toBe(RECT);
+  });
+
+  it('applies x/y/size/rotation to an emoji shape', () => {
+    expect(
+      applyCoordEdit(EMOJI, { kind: 'emoji', x: 5, y: 6, size: 120, rotation: 45 }),
+    ).toMatchObject({ kind: 'emoji', x: 5, y: 6, size: 120, rotation: 45, emoji: '😀' });
+  });
+
+  it('floors an emoji size edit at the minimum so it never collapses', () => {
+    const next = applyCoordEdit(EMOJI, {
+      kind: 'emoji',
+      x: 5,
+      y: 6,
+      size: 0,
+      rotation: 0,
+    }) as EmojiShape;
+    expect(next.size).toBeGreaterThan(0);
+  });
+
+  it('wraps an out-of-range emoji angle into [0, 360)', () => {
+    const next = applyCoordEdit(EMOJI, {
+      kind: 'emoji',
+      x: 5,
+      y: 6,
+      size: 96,
+      rotation: 400,
+    }) as EmojiShape;
+    expect(next.rotation).toBe(40);
   });
 });

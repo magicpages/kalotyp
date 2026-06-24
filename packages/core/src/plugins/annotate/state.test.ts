@@ -3,9 +3,13 @@ import {
   type ArrowShape,
   addShape,
   createCenteredShape,
+  DEFAULT_EMOJI,
+  defaultEmojiSize,
   defaultStylePalette,
   deleteShape,
   type EllipseShape,
+  EMOJI_MIN_SIZE,
+  type EmojiShape,
   findShape,
   initialAnnotateState,
   isKeyboardPlaceableKind,
@@ -24,6 +28,17 @@ import {
   type TextShape,
   translateShape,
 } from './state.js';
+
+function makeEmoji(
+  id: string,
+  x = 100,
+  y = 100,
+  size = 80,
+  emoji = '😀',
+  rotation = 0,
+): EmojiShape {
+  return { id, kind: 'emoji', x, y, emoji, size, rotation };
+}
 
 const baseInit = { imageSize: { width: 1000, height: 800 } };
 
@@ -188,12 +203,13 @@ describe('annotate state', () => {
   describe('createCenteredShape (keyboard placement)', () => {
     const style = defaultStylePalette();
 
-    it('lists the four keyboard-placeable kinds and excludes freehand/highlight', () => {
+    it('lists the keyboard-placeable kinds and excludes freehand/highlight', () => {
       expect([...KEYBOARD_PLACEABLE_KINDS].sort()).toEqual(
-        ['arrow', 'ellipse', 'rect', 'text'].sort(),
+        ['arrow', 'ellipse', 'emoji', 'rect', 'text'].sort(),
       );
       expect(isKeyboardPlaceableKind('rect')).toBe(true);
       expect(isKeyboardPlaceableKind('text')).toBe(true);
+      expect(isKeyboardPlaceableKind('emoji')).toBe(true);
       expect(isKeyboardPlaceableKind('freehand')).toBe(false);
       expect(isKeyboardPlaceableKind('highlight')).toBe(false);
     });
@@ -258,6 +274,69 @@ describe('annotate state', () => {
       }) as RectShape;
       expect(shape.width).toBe(80);
       expect(shape.height).toBe(80);
+    });
+
+    it('places the armed emoji as a centred square sized to ~20% of the shorter edge', () => {
+      const shape = createCenteredShape('emoji', {
+        imageSize: { width: 1000, height: 800 },
+        style: { ...style, emoji: '🚀' },
+        id: 's_5',
+      }) as EmojiShape;
+      expect(shape.kind).toBe('emoji');
+      expect(shape.emoji).toBe('🚀');
+      // 20% of the 800px short edge = 160.
+      expect(shape.size).toBe(160);
+      expect(shape.x).toBe(Math.round(500 - 160 / 2));
+      expect(shape.y).toBe(Math.round(400 - 160 / 2));
+      expect(shape.rotation).toBe(0);
+    });
+
+    it('defaultEmojiSize floors at 64px on tiny images', () => {
+      expect(defaultEmojiSize({ width: 1000, height: 800 })).toBe(160);
+      expect(defaultEmojiSize({ width: 100, height: 80 })).toBe(64);
+    });
+  });
+
+  describe('emoji shape', () => {
+    it('seeds the default emoji in the style palette', () => {
+      expect(defaultStylePalette().emoji).toBe(DEFAULT_EMOJI);
+    });
+
+    it('translateShape moves an emoji by dx/dy', () => {
+      expect(translateShape(makeEmoji('e', 100, 100, 80), 5, 7)).toMatchObject({
+        x: 105,
+        y: 107,
+        size: 80,
+      });
+    });
+
+    it('mirrors an emoji box so it straddles the same pixels (glyph not flipped)', () => {
+      const dims = { width: 1000, height: 800 };
+      const h = mirrorShape(
+        makeEmoji('e', 100, 50, 80, '😀', 90),
+        'horizontal',
+        dims,
+      ) as EmojiShape;
+      // Reflection negates the spin direction; box repositions.
+      expect(h).toMatchObject({ x: 1000 - 100 - 80, y: 50, size: 80, emoji: '😀', rotation: 270 });
+      const v = mirrorShape(makeEmoji('e', 100, 50, 80, '😀', 90), 'vertical', dims) as EmojiShape;
+      expect(v).toMatchObject({ x: 100, y: 800 - 50 - 80, size: 80, rotation: 90 });
+    });
+
+    it('rotates an emoji 90° CW keeping it square, advancing its angle', () => {
+      const oldDims = { width: 1000, height: 800 };
+      const next = rotateShape(makeEmoji('e', 100, 50, 80, '😀', 30), 1, oldDims) as EmojiShape;
+      expect(next.size).toBe(80);
+      // 90° CW maps the box corners (100,50)/(180,130) to a square; the new
+      // top-left is the min of the rotated corners.
+      expect(next.x).toBe(800 - 130);
+      expect(next.y).toBe(100);
+      // The glyph's own rotation advances with the image (30 + 90).
+      expect(next.rotation).toBe(120);
+    });
+
+    it('exposes a non-zero minimum emoji size', () => {
+      expect(EMOJI_MIN_SIZE).toBeGreaterThan(0);
     });
   });
 

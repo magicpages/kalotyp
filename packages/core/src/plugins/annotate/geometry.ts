@@ -21,6 +21,8 @@ export function boundingBoxOf(shape: Shape): Rect {
     case 'rect':
     case 'ellipse':
       return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+    case 'emoji':
+      return { x: shape.x, y: shape.y, width: shape.size, height: shape.size };
     case 'arrow': {
       const x = Math.min(shape.x1, shape.x2);
       const y = Math.min(shape.y1, shape.y2);

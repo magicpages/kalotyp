@@ -111,6 +111,7 @@ function makeStubDeps(overrides: Partial<EditorDependencies> = {}): EditorDepend
         fontWeight: 'normal',
         fontStyle: 'normal',
         textAlign: 'left',
+        emoji: '😀',
       },
       imageSize: { width: 800, height: 600 },
       nextShapeNumber: 1,

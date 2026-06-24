@@ -15,7 +15,8 @@
       "!**/test-results",
       "!**/.turbo",
       "!**/.claude",
-      "!pnpm-lock.yaml"
+      "!pnpm-lock.yaml",
+      "!**/plugins/annotate/emoji-data.ts"
     ]
   },
   "assist": {

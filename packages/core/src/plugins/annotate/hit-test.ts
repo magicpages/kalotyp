@@ -17,6 +17,8 @@ export function pickShape(shapes: ReadonlyArray<Shape>, point: Point): Shape | u
 export function hitTest(shape: Shape, point: Point): boolean {
   switch (shape.kind) {
     case 'text':
+    case 'emoji':
+      // Both pick anywhere inside their (filled) box.
       return pointInRect(point, boundingBoxOf(shape));
     case 'rect': {
       const inside = pointInRect(point, normaliseBox(shape));

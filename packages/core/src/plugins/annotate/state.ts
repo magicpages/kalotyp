@@ -5,7 +5,7 @@
 
 import type { Point } from '../../geometry/rect.js';
 
-export type ShapeKind = 'text' | 'rect' | 'ellipse' | 'arrow' | 'freehand' | 'highlight';
+export type ShapeKind = 'text' | 'rect' | 'ellipse' | 'arrow' | 'freehand' | 'highlight' | 'emoji';
 
 /** Tools the annotation plugin exposes. `select` is the picker. */
 export type AnnotateTool = ShapeKind | 'select';
@@ -90,13 +90,27 @@ export interface HighlightShape extends ShapeBase {
   readonly strokeWidth: number;
 }
 
+export interface EmojiShape extends ShapeBase {
+  readonly kind: 'emoji';
+  /** Top-left of the (square) sticker box, in image-space pixels. */
+  readonly x: number;
+  readonly y: number;
+  /** The emoji character; resolved to vector artwork at paint time. */
+  readonly emoji: string;
+  /** Box edge length in image-space pixels; the glyph is drawn at this size. */
+  readonly size: number;
+  /** Clockwise rotation in degrees about the box centre (0 = upright). */
+  readonly rotation: number;
+}
+
 export type Shape =
   | TextShape
   | RectShape
   | EllipseShape
   | ArrowShape
   | FreehandShape
-  | HighlightShape;
+  | HighlightShape
+  | EmojiShape;
 
 export interface StylePalette {
   readonly color: string;
@@ -110,6 +124,8 @@ export interface StylePalette {
   readonly fontWeight: TextFontWeight;
   readonly fontStyle: TextFontStyle;
   readonly textAlign: TextAlign;
+  /** The armed emoji for new emoji stickers (see fonts: native OS emoji). */
+  readonly emoji: string;
 }
 
 export interface AnnotateState {
@@ -134,6 +150,29 @@ export const DEFAULT_STROKE_WIDTH = 4;
 /** Default font key for new text shapes; resolves to the system stack. */
 export const DEFAULT_FONT_KEY = 'system';
 
+/** The emoji a fresh editor session arms for the emoji sticker tool. */
+export const DEFAULT_EMOJI = '😀';
+/** Smallest emoji sticker edge in image-space pixels (floor for handle resize). */
+export const EMOJI_MIN_SIZE = 8;
+
+/**
+ * Default edge length for a freshly placed emoji sticker, scaled to the image
+ * so a sticker reads at a sensible size on both tiny and huge sources. Shared by
+ * click-placement and centre-insert so the two paths agree.
+ */
+export function defaultEmojiSize(imageSize: {
+  readonly width: number;
+  readonly height: number;
+}): number {
+  const shortEdge = Math.min(imageSize.width, imageSize.height);
+  return Math.max(64, Math.round(shortEdge * 0.2));
+}
+
+/** Wrap an angle in degrees into the [0, 360) range. */
+export function normalizeAngle(degrees: number): number {
+  return ((degrees % 360) + 360) % 360;
+}
+
 export function defaultStylePalette(): StylePalette {
   return {
     color: DEFAULT_PALETTE_COLOR,
@@ -144,6 +183,7 @@ export function defaultStylePalette(): StylePalette {
     fontWeight: 'normal',
     fontStyle: 'normal',
     textAlign: 'left',
+    emoji: DEFAULT_EMOJI,
   };
 }
 
@@ -265,6 +305,7 @@ export function translateShape(shape: Shape, dx: number, dy: number): Shape {
       return { ...shape, x: shape.x + dx, y: shape.y + dy };
     case 'rect':
     case 'ellipse':
+    case 'emoji':
       return { ...shape, x: shape.x + dx, y: shape.y + dy };
     case 'arrow':
       return {
@@ -303,6 +344,15 @@ export function mirrorShape(
       case 'rect':
       case 'ellipse':
         return { ...shape, x: dims.width - shape.x - shape.width };
+      case 'emoji':
+        // Reposition the box so it straddles the mirrored pixels; the glyph
+        // itself is not flipped (a flipped emoji reads as broken). Reflection
+        // reverses the spin direction.
+        return {
+          ...shape,
+          x: dims.width - shape.x - shape.size,
+          rotation: normalizeAngle(-shape.rotation),
+        };
       case 'text':
         return { ...shape, x: dims.width - shape.x };
       case 'arrow':
@@ -321,6 +371,13 @@ export function mirrorShape(
     case 'rect':
     case 'ellipse':
       return { ...shape, y: dims.height - shape.y - shape.height };
+    case 'emoji':
+      // `180 - rotation` keeps H∘V consistent with a 180° image rotation.
+      return {
+        ...shape,
+        y: dims.height - shape.y - shape.size,
+        rotation: normalizeAngle(180 - shape.rotation),
+      };
     case 'text':
       return { ...shape, y: dims.height - shape.y };
     case 'arrow':
@@ -365,6 +422,18 @@ export function rotateShape(
       const newH = Math.abs(corners[1].y - corners[0].y);
       return { ...shape, x: newX, y: newY, width: newW, height: newH };
     }
+    case 'emoji': {
+      // Rotating a square box yields a square box of the same edge; only the
+      // top-left corner moves, so keep `size` and re-derive x/y from the
+      // rotated corners. The glyph's own rotation advances with the image.
+      const corners = [
+        rotatePoint(shape.x, shape.y),
+        rotatePoint(shape.x + shape.size, shape.y + shape.size),
+      ];
+      const newX = Math.min(corners[0].x, corners[1].x);
+      const newY = Math.min(corners[0].y, corners[1].y);
+      return { ...shape, x: newX, y: newY, rotation: normalizeAngle(shape.rotation + turns * 90) };
+    }
     case 'text': {
       const p = rotatePoint(shape.x, shape.y);
       return { ...shape, x: p.x, y: p.y };
@@ -395,17 +464,20 @@ export function transformShapes(
  * Kinds placeable from the keyboard. Freehand / highlight are excluded;
  * a "default at centre" instance has no honest shape for those.
  */
-export type KeyboardPlaceableKind = 'text' | 'rect' | 'ellipse' | 'arrow';
+export type KeyboardPlaceableKind = 'text' | 'rect' | 'ellipse' | 'arrow' | 'emoji';
 
 export const KEYBOARD_PLACEABLE_KINDS: ReadonlyArray<KeyboardPlaceableKind> = [
   'text',
   'rect',
   'ellipse',
   'arrow',
+  'emoji',
 ];
 
 export function isKeyboardPlaceableKind(kind: ShapeKind): kind is KeyboardPlaceableKind {
-  return kind === 'text' || kind === 'rect' || kind === 'ellipse' || kind === 'arrow';
+  return (
+    kind === 'text' || kind === 'rect' || kind === 'ellipse' || kind === 'arrow' || kind === 'emoji'
+  );
 }
 
 export interface CreateCenteredShapeContext {
@@ -414,8 +486,8 @@ export interface CreateCenteredShapeContext {
   readonly id: string;
 }
 
-/** A `Shape` whose kind is keyboard-placeable (rect / ellipse / arrow / text). */
-export type KeyboardPlaceableShape = TextShape | RectShape | EllipseShape | ArrowShape;
+/** A `Shape` whose kind is keyboard-placeable (rect / ellipse / arrow / text / emoji). */
+export type KeyboardPlaceableShape = TextShape | RectShape | EllipseShape | ArrowShape | EmojiShape;
 
 export function createCenteredShape(
   kind: KeyboardPlaceableKind,
@@ -489,6 +561,12 @@ export function createCenteredShape(
         fontWeight: style.fontWeight,
         fontStyle: style.fontStyle,
       };
+    }
+    case 'emoji': {
+      const size = defaultEmojiSize(imageSize);
+      const x = Math.round(cx - size / 2);
+      const y = Math.round(cy - size / 2);
+      return { id, kind: 'emoji', x, y, emoji: style.emoji, size, rotation: 0 };
     }
   }
 }

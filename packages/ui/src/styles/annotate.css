@@ -62,6 +62,9 @@
 .kalotyp-annotate-stage[data-tool="text"] .kalotyp-annotate-hit {
   cursor: text;
 }
+.kalotyp-annotate-stage[data-tool="emoji"] .kalotyp-annotate-hit {
+  cursor: copy;
+}
 
 .kalotyp-annotate-handles {
   position: absolute;
@@ -110,6 +113,35 @@
   cursor: ew-resize;
 }
 
+/* Emoji rotate handle — orbits above the sticker box. Indigo to distinguish it
+ * from the (foreground-coloured) resize handles. */
+.kalotyp-annotate-rotate-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border: 2px solid rgb(var(--color-background));
+  border-radius: 50%;
+  background: rgb(99, 102, 241);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  pointer-events: auto;
+  padding: 0;
+  font-size: 0;
+  touch-action: none;
+}
+
+.kalotyp-annotate-rotate-handle:active {
+  cursor: grabbing;
+}
+
+.kalotyp-annotate-rotate-handle:focus-visible {
+  outline: 2px solid var(--kalotyp-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--kalotyp-focus-halo);
+}
+
 .kalotyp-annotate-text-overlay {
   position: absolute;
   inset: 0;
@@ -147,6 +179,213 @@
 .kalotyp-annotate-text-editor::selection {
   color: transparent;
   background-color: rgba(99, 102, 241, 0.35);
+}
+
+/* ----- Emoji sticker picker (stage overlay, z 6 above the text overlay) -----
+ * A floating popover anchored over the bottom of the stage. It overlays rather
+ * than reflowing the panel so opening it never rescales the letterboxed image
+ * (the same "no reflow" rule the text editor follows). The grid scrolls
+ * internally; only the active category (or capped search matches) is rendered.
+ */
+.kalotyp-annotate-emoji-picker {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(360px, calc(100% - 24px));
+  max-height: min(360px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: rgb(var(--color-background));
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.kalotyp-annotate-emoji-picker[hidden] {
+  display: none;
+}
+
+.kalotyp-annotate-emoji-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kalotyp-annotate-emoji-title {
+  font-size: var(--kalotyp-text-size);
+  font-weight: 600;
+  color: rgb(var(--color-foreground));
+}
+
+.kalotyp-annotate-emoji-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kalotyp-muted);
+  cursor: pointer;
+}
+
+.kalotyp-annotate-emoji-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kalotyp-annotate-emoji-close:hover {
+  color: rgb(var(--color-foreground));
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-annotate-emoji-close:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-emoji-search {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.kalotyp-annotate-emoji-search svg {
+  position: absolute;
+  left: 8px;
+  width: 16px;
+  height: 16px;
+  color: var(--kalotyp-muted);
+  pointer-events: none;
+}
+
+.kalotyp-annotate-emoji-search-input {
+  width: 100%;
+  height: var(--kalotyp-control-height);
+  padding: 0 10px 0 30px;
+  border: 1px solid var(--kalotyp-border);
+  border-radius: var(--kalotyp-radius);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font: inherit;
+  font-size: var(--kalotyp-text-size);
+}
+
+.kalotyp-annotate-emoji-search-input:focus-visible {
+  outline: none;
+  border-color: rgb(var(--color-foreground));
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-emoji-tabs {
+  display: flex;
+  /* Don't let the column flex squish this row — keep the category icons full
+   * size; only the grid below should flex/scroll. */
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.kalotyp-annotate-emoji-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kalotyp-annotate-emoji-tab-img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+.kalotyp-annotate-emoji-tab:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-annotate-emoji-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-emoji-tab[aria-selected="true"] {
+  background: var(--kalotyp-track);
+  border-color: var(--kalotyp-border);
+}
+
+.kalotyp-annotate-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--kalotyp-emoji-cols, 8), 1fr);
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Allow vertical touch scrolling (the stage sets touch-action: none) and keep
+   * the scroll from chaining to the editor once the list reaches its end. */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+.kalotyp-annotate-emoji-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kalotyp-annotate-emoji-cell:hover {
+  background: var(--kalotyp-soft);
+}
+
+.kalotyp-annotate-emoji-cell:focus-visible {
+  outline: none;
+  box-shadow: var(--kalotyp-focus-shadow);
+}
+
+.kalotyp-annotate-emoji-cell-img {
+  display: block;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+}
+
+.kalotyp-annotate-emoji-empty {
+  margin: 0;
+  padding: 12px 0;
+  text-align: center;
+  font-size: var(--kalotyp-text-size);
+  color: var(--kalotyp-muted);
+}
+
+.kalotyp-annotate-emoji-empty[hidden] {
+  display: none;
 }
 
 /* ----- Bottom panel ----- */

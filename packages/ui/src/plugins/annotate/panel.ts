@@ -58,8 +58,12 @@ export interface AnnotatePanel {
   setActiveTool(tool: AnnotateTool): void;
   setStyle(style: StylePalette): void;
   setCanDelete(canDelete: boolean): void;
-  /** Show the text controls (and the stroke Width control) per the active tool / selection. */
-  setTextControlsVisible(showText: boolean): void;
+  /**
+   * Show the per-mode controls for the active tool / selection. `text` reveals
+   * the font/size/bold/italic/align row; `emoji` hides the colour + stroke
+   * controls (an emoji carries its own colour). Stroke width hides for both.
+   */
+  setControlsMode(mode: { readonly text: boolean; readonly emoji: boolean }): void;
 }
 
 /**
@@ -81,6 +85,7 @@ const TOOL_DEFS: ReadonlyArray<{ id: AnnotateTool; label: string; icon: string }
   { id: 'arrow', label: 'Arrow', icon: icon('arrow') },
   { id: 'freehand', label: 'Freehand', icon: icon('freehand') },
   { id: 'highlight', label: 'Highlight', icon: icon('highlight') },
+  { id: 'emoji', label: 'Emoji', icon: icon('emoji') },
 ];
 
 /**
@@ -385,11 +390,15 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
     deleteButton.disabled = !canDelete;
   }
 
-  function setTextControlsVisible(showText: boolean): void {
-    textRow.style.display = showText ? '' : 'none';
-    // The stroke Width control is meaningless for text; swap it out so the
-    // text row owns sizing while text is in play.
-    strokeWrap.style.display = showText ? 'none' : '';
+  function setControlsMode(mode: { readonly text: boolean; readonly emoji: boolean }): void {
+    textRow.style.display = mode.text ? '' : 'none';
+    // An emoji sticker carries its own colour, so the colour controls don't
+    // apply — hide the swatches + hex input while emoji is in play.
+    swatchGroup.style.display = mode.emoji ? 'none' : '';
+    hexInput.style.display = mode.emoji ? 'none' : '';
+    // Stroke width is meaningless for both text (font-size drives it) and emoji;
+    // swap it out so the relevant row owns sizing.
+    strokeWrap.style.display = mode.text || mode.emoji ? 'none' : '';
   }
 
   setStyle(options.initialStyle);
@@ -410,7 +419,7 @@ export function buildAnnotatePanel(options: AnnotatePanelOptions): AnnotatePanel
     setActiveTool,
     setStyle,
     setCanDelete,
-    setTextControlsVisible,
+    setControlsMode,
   };
 }
 

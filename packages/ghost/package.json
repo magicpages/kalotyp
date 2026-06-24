@@ -36,7 +36,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && node ../../scripts/copy-emoji-svgs.mjs && tsc -p tsconfig.build.json",
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:watch": "vitest",

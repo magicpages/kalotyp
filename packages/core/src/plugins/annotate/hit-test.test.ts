@@ -3,6 +3,7 @@ import { hitTest, pickShape } from './hit-test.js';
 import type {
   ArrowShape,
   EllipseShape,
+  EmojiShape,
   FreehandShape,
   HighlightShape,
   RectShape,
@@ -175,6 +176,27 @@ describe('hitTest — text', () => {
   });
   it('rejects outside the box', () => {
     expect(hitTest(text, { x: 0, y: 0 })).toBe(false);
+  });
+});
+
+describe('hitTest — emoji', () => {
+  const emoji: EmojiShape = {
+    id: 'e1',
+    kind: 'emoji',
+    x: 100,
+    y: 100,
+    emoji: '😀',
+    size: 80,
+    rotation: 0,
+  };
+  it('picks anywhere inside the square box', () => {
+    expect(hitTest(emoji, { x: 140, y: 140 })).toBe(true);
+    expect(hitTest(emoji, { x: 100, y: 100 })).toBe(true);
+    expect(hitTest(emoji, { x: 180, y: 180 })).toBe(true);
+  });
+  it('rejects outside the box', () => {
+    expect(hitTest(emoji, { x: 90, y: 90 })).toBe(false);
+    expect(hitTest(emoji, { x: 200, y: 140 })).toBe(false);
   });
 });
 

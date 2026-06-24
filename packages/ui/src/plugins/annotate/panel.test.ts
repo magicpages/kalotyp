@@ -10,6 +10,7 @@ const initialStyle = {
   fontWeight: 'normal' as const,
   fontStyle: 'normal' as const,
   textAlign: 'left' as const,
+  emoji: '😀',
 };
 
 function build(
@@ -20,7 +21,8 @@ function build(
     | 'arrow'
     | 'text'
     | 'freehand'
-    | 'highlight' = 'select',
+    | 'highlight'
+    | 'emoji' = 'select',
 ) {
   const events: Record<string, unknown[]> = {
     color: [],
@@ -120,6 +122,7 @@ describe('annotate panel — keyboard placement Insert button', () => {
     'ellipse',
     'arrow',
     'text',
+    'emoji',
   ] as const)('enables Insert for the keyboard-placeable tool: %s', (tool) => {
     const { panel } = build(tool);
     expect(panel.insertButton.disabled).toBe(false);
@@ -165,6 +168,38 @@ describe('annotate panel — keyboard placement Insert button', () => {
     // insert controls.
     const lastChild = panel.container.lastElementChild;
     expect(lastChild).toBe(coordInputs);
+  });
+});
+
+describe('annotate panel — emoji tool', () => {
+  it('mounts an Emoji tool button in the toolbar', () => {
+    const { panel } = build();
+    const emojiTool = panel.toolButtons.get('emoji');
+    expect(emojiTool).toBeTruthy();
+    expect(emojiTool?.getAttribute('aria-label')).toBe('Emoji');
+  });
+
+  it('emoji mode hides the colour, stroke, and text controls', () => {
+    const { panel } = build('emoji');
+    panel.setControlsMode({ text: false, emoji: true });
+    const swatches = panel.container.querySelector<HTMLElement>('.kalotyp-annotate-swatches');
+    const strokeWrap = panel.container.querySelector<HTMLElement>('.kalotyp-annotate-stroke-wrap');
+    const textRow = panel.container.querySelector<HTMLElement>('.kalotyp-annotate-text-row');
+    expect(swatches?.style.display).toBe('none');
+    expect(panel.hexInput.style.display).toBe('none');
+    expect(strokeWrap?.style.display).toBe('none');
+    expect(textRow?.style.display).toBe('none');
+  });
+
+  it('shape mode restores the colour + stroke controls', () => {
+    const { panel } = build('rect');
+    panel.setControlsMode({ text: false, emoji: true });
+    panel.setControlsMode({ text: false, emoji: false });
+    const swatches = panel.container.querySelector<HTMLElement>('.kalotyp-annotate-swatches');
+    const strokeWrap = panel.container.querySelector<HTMLElement>('.kalotyp-annotate-stroke-wrap');
+    expect(swatches?.style.display).not.toBe('none');
+    expect(panel.hexInput.style.display).not.toBe('none');
+    expect(strokeWrap?.style.display).not.toBe('none');
   });
 });
 

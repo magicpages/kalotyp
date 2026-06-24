@@ -17,6 +17,15 @@ import type { TextShape } from './state.js';
 export const SYSTEM_FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+/**
+ * Colour-emoji stack for the emoji sticker tool. Emoji render with the
+ * platform's native colour-emoji font (no web font requested), so the baked
+ * appearance is whatever the editing browser drew. `sans-serif` is the last
+ * resort if no emoji font is installed (renders the dotted-box fallback).
+ */
+export const EMOJI_FONT_STACK =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji", sans-serif';
+
 export interface FontDef {
   /** Stable key stored on the shape; resolved to a CSS stack via `fontStackFor`. */
   readonly key: string;

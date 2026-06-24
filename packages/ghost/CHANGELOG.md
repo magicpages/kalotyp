@@ -1,5 +1,19 @@
 # @magicpages/kalotyp
 
+## 0.2.0
+
+### Minor Changes
+
+- fc7350d: Add an emoji sticker tool to the annotate utility. A new Emoji tool opens a searchable picker (the full set, with category tabs) and places the chosen emoji on the image as its own object: click to place, drag to move, drag a corner to resize uniformly, and drag the rotate handle (or type an angle) to rotate. Emojis render as OpenMoji vector artwork — crisp at any size and identical across platforms — loaded on demand from same-origin assets shipped with the package, with the OS emoji font as a fallback. The picker scrolls without zooming the image.
+- 7e4c16f: Rework the text annotation tool. Text shapes gain a font family picker (the same set Ghost loads from fonts.bunny.net), bold/italic toggles, alignment buttons, and a font-size control in the panel. Clicking an existing text annotation with the text tool re-opens its editor instead of stacking a new one, and the inline editor no longer shows a duplicate selection frame while editing. Text size is set from the panel rather than by dragging handles.
+
+### Patch Changes
+
+- Updated dependencies [fc7350d]
+- Updated dependencies [7e4c16f]
+  - @magicpages/kalotyp-core@0.2.0
+  - @magicpages/kalotyp-ui@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes

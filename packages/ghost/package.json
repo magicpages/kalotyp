@@ -1,6 +1,6 @@
 {
   "name": "@magicpages/kalotyp",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Kalotyp — an open-source image editor for Ghost CMS. The bundle Ghost loads (kalotyp.js + kalotyp.css).",
   "license": "MIT",
   "author": "Jannis Fedoruk-Betschki <jannis@magicpages.co>",

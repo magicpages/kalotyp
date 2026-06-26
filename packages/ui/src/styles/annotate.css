@@ -154,15 +154,19 @@
   pointer-events: auto;
   display: inline-block;
   min-width: 1ch;
-  /* Transparent input overlay: the visible glyphs are painted on the canvas
-   * (same code as the bake), so editing == committed and the text can't jump.
-   * This element only captures keystrokes and shows the caret. `color` and
-   * `caret-color` are set in JS (transparent text, shape-coloured caret). */
+  /* Transparent <textarea> overlay: the visible glyphs are painted on the
+   * canvas (same code as the bake), so editing == committed and the text can't
+   * jump. This element only captures keystrokes and shows the caret. `color`
+   * and `caret-color` are set in JS (transparent text, shape-coloured caret);
+   * width/height are auto-sized to the content so it never scrolls. */
+  box-sizing: border-box;
   padding: 0;
   margin: 0;
   background: transparent;
   border: none;
   outline: none;
+  resize: none;
+  overflow: hidden;
   white-space: pre;
   line-height: 1.2;
 }

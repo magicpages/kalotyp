@@ -29,8 +29,19 @@ export function emojiKeyFor(char: string): string | undefined {
 let assetBaseOverride: string | null = null;
 
 /**
+ * Build-time default base, injected by the Ghost bundle build (see
+ * `packages/ghost/vite.config.ts`) to the versioned jsDelivr path where the
+ * published package's `dist/emoji` lives. This is what makes emoji work out of
+ * the box: the bundle is loaded via dynamic `import()` and can't reliably learn
+ * its own URL, so we point at the CDN copy of the matching release. It is
+ * `undefined` in unit tests / direct UI-package use, where we fall back to the
+ * same-origin `/emoji/` path.
+ */
+declare const __KALOTYP_EMOJI_DEFAULT_BASE__: string | undefined;
+
+/**
  * Override where emoji SVGs are loaded from. The host (e.g. the Ghost loader)
- * calls this when the assets aren't served at the default `/emoji/` path. A
+ * calls this to self-host the assets instead of using the CDN default. A
  * trailing slash is enforced.
  *
  * Best set before the first emoji is used, but a later change is honoured:
@@ -60,6 +71,11 @@ function assetBase(): string {
       ? (window as { __KALOTYP_EMOJI_BASE__?: unknown }).__KALOTYP_EMOJI_BASE__
       : undefined;
   if (typeof fromGlobal === 'string' && fromGlobal.length > 0) return withSlash(fromGlobal);
+  // Build-time CDN default (Ghost bundle). `typeof` guard so the bare identifier
+  // is safe when the define wasn't applied (tests / UI-package consumers).
+  if (typeof __KALOTYP_EMOJI_DEFAULT_BASE__ === 'string' && __KALOTYP_EMOJI_DEFAULT_BASE__) {
+    return withSlash(__KALOTYP_EMOJI_DEFAULT_BASE__);
+  }
   return '/emoji/';
 }
 

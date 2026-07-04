@@ -551,6 +551,23 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     },
   });
 
+  // A pointer interaction on the stage — selecting, placing, moving, or
+  // dragging a resize/rotate handle — means the user is done typing in the
+  // coordinate inputs. Blur a focused coord input so: (a) its typed value
+  // commits, (b) the gesture's live geometry syncs back into the field (the
+  // sync skips a *focused* input to avoid clobbering mid-typing, so a still-
+  // focused field would otherwise freeze at its last typed value while the
+  // shape resizes underneath it), and (c) Delete/Backspace target the shape
+  // again instead of editing the number field. Capture-phase so it runs
+  // before the selection/tool pointerdown handlers act on the same event.
+  const blurCoordInputOnStagePointer = (): void => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && coordInputs.container.contains(active)) {
+      active.blur();
+    }
+  };
+  stage.container.addEventListener('pointerdown', blurCoordInputOnStagePointer, true);
+
   // ----- Emoji sticker picker -----
   // A self-contained overlay anchored over the stage. Opens when the emoji tool
   // is selected; picking arms the glyph and closes it (the canvas is then free
@@ -781,6 +798,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       unsubscribe();
       unsubscribeViewport?.();
       resizeObserver.disconnect();
+      stage.container.removeEventListener('pointerdown', blurCoordInputOnStagePointer, true);
       textEditor.destroy();
       emojiPicker.destroy();
       selectionLayer.destroy();

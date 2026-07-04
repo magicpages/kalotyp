@@ -29,20 +29,20 @@ export function emojiKeyFor(char: string): string | undefined {
 let assetBaseOverride: string | null = null;
 
 /**
- * Build-time default base, injected by the Ghost bundle build (see
- * `packages/ghost/vite.config.ts`) to the versioned jsDelivr path where the
- * published package's `dist/emoji` lives. This is what makes emoji work out of
- * the box: the bundle is loaded via dynamic `import()` and can't reliably learn
- * its own URL, so we point at the CDN copy of the matching release. It is
- * `undefined` in unit tests / direct UI-package use, where we fall back to the
+ * Default base derived from the bundle's own URL, set once at load by the Ghost
+ * bundle entry (`packages/ghost/src/index.ts`) via {@link setEmojiAssetBaseDefault}.
+ * The OpenMoji SVGs ship in the `dist/emoji/` directory next to the bundle, so
+ * resolving them relative to the bundle's `import.meta.url` loads them from the
+ * same origin the bundle was served from — no CDN and no per-site config. It is
+ * `null` in unit tests / direct UI-package use, where we fall back to the
  * same-origin `/emoji/` path.
  */
-declare const __KALOTYP_EMOJI_DEFAULT_BASE__: string | undefined;
+let autoAssetBase: string | null = null;
 
 /**
- * Override where emoji SVGs are loaded from. The host (e.g. the Ghost loader)
- * calls this to self-host the assets instead of using the CDN default. A
- * trailing slash is enforced.
+ * Override where emoji SVGs are loaded from. The host calls this to self-host
+ * the assets somewhere other than next to the bundle. A trailing slash is
+ * enforced. Highest precedence — a host choice always wins over the auto default.
  *
  * Best set before the first emoji is used, but a later change is honoured:
  * already-cached images were loaded from the old base, so changing it drops the
@@ -53,6 +53,24 @@ export function setEmojiAssetBase(url: string): void {
   if (next === assetBaseOverride) return;
   assetBaseOverride = next;
   // Invalidate images keyed to the previous base; a repaint reloads them.
+  cache.clear();
+  notifyLoaded();
+}
+
+/**
+ * Set the *default* emoji asset base. The Ghost bundle calls this at load with
+ * the emoji directory resolved from its own URL (`import.meta.url`), so stickers
+ * load from the same origin the bundle was served from. It is only consulted
+ * when the host hasn't chosen an explicit base via {@link setEmojiAssetBase} or
+ * `window.__KALOTYP_EMOJI_BASE__`, so a self-hoster's choice always wins.
+ *
+ * Intended to run once before any emoji is used; it still drops the cache and
+ * repaints so a late call is safe.
+ */
+export function setEmojiAssetBaseDefault(url: string): void {
+  const next = withSlash(url);
+  if (next === autoAssetBase) return;
+  autoAssetBase = next;
   cache.clear();
   notifyLoaded();
 }
@@ -71,11 +89,10 @@ function assetBase(): string {
       ? (window as { __KALOTYP_EMOJI_BASE__?: unknown }).__KALOTYP_EMOJI_BASE__
       : undefined;
   if (typeof fromGlobal === 'string' && fromGlobal.length > 0) return withSlash(fromGlobal);
-  // Build-time CDN default (Ghost bundle). `typeof` guard so the bare identifier
-  // is safe when the define wasn't applied (tests / UI-package consumers).
-  if (typeof __KALOTYP_EMOJI_DEFAULT_BASE__ === 'string' && __KALOTYP_EMOJI_DEFAULT_BASE__) {
-    return withSlash(__KALOTYP_EMOJI_DEFAULT_BASE__);
-  }
+  // Default derived from the bundle's own URL (set by the Ghost entry); loads
+  // the SVGs from the same origin the bundle was served from.
+  if (autoAssetBase) return autoAssetBase;
+  // Last resort: same-origin `/emoji/` (unit tests / direct UI-package use).
   return '/emoji/';
 }
 

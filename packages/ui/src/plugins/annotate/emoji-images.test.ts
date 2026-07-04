@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   emojiKeyFor,
   emojiSvgUrl,
@@ -34,6 +34,27 @@ describe('emoji-images — key + URL mapping', () => {
   it('honours an explicit asset-base override (trailing slash enforced)', () => {
     setEmojiAssetBase('https://cdn.example/x');
     expect(emojiSvgUrlForKey('1F600')).toBe('https://cdn.example/x/1F600.svg');
+  });
+});
+
+describe('emoji-images — default base derived from the bundle URL', () => {
+  it('falls back, uses the derived default, then lets an explicit base win', async () => {
+    // Fresh module instance so we start from pristine state (no override set by
+    // a prior test's afterEach, which would otherwise mask the lower tiers).
+    vi.resetModules();
+    const mod = await import('./emoji-images.js');
+
+    // No override, no global, no derived default → last-resort same-origin path.
+    expect(mod.emojiSvgUrlForKey('1F600')).toBe('/emoji/1F600.svg');
+
+    // The Ghost entry sets this from `import.meta.url`; a trailing slash is
+    // enforced and the emoji now load from that (bundle) origin.
+    mod.setEmojiAssetBaseDefault('https://accounts.example/kalotyp/emoji');
+    expect(mod.emojiSvgUrlForKey('1F600')).toBe('https://accounts.example/kalotyp/emoji/1F600.svg');
+
+    // A self-hoster's explicit choice always wins over the derived default.
+    mod.setEmojiAssetBase('https://self.example/e/');
+    expect(mod.emojiSvgUrlForKey('1F600')).toBe('https://self.example/e/1F600.svg');
   });
 });
 

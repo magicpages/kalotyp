@@ -88,8 +88,9 @@ test('keyboard-only: open → crop → rotate → annotate → finetune → save
     await expect(inputs.first()).toHaveValue('120');
   }
 
-  // Text path: Insert opens the inline editor, focus enters a
-  // contenteditable, Enter commits.
+  // Text path: Insert opens the inline editor (a transparent <textarea>);
+  // typing fills its value. Plain Enter inserts a newline (text annotations are
+  // multi-line); Ctrl/Cmd+Enter commits and closes the editor.
   await page.locator('.kalotyp-annotate-tool[data-tool="text"]').focus();
   await page.keyboard.press('Enter');
   await page.locator('.kalotyp-annotate-insert').focus();
@@ -97,8 +98,14 @@ test('keyboard-only: open → crop → rotate → annotate → finetune → save
   const textEditor = page.locator('.kalotyp-annotate-text-editor');
   await expect(textEditor).toBeVisible();
   await page.keyboard.type('Hello');
-  await expect(textEditor).toHaveText('Hello');
+  await expect(textEditor).toHaveValue('Hello');
+  // Plain Enter adds a newline and keeps the editor open.
   await page.keyboard.press('Enter');
+  await page.keyboard.type('world');
+  await expect(textEditor).toHaveValue('Hello\nworld');
+  await expect(textEditor).toBeVisible();
+  // Ctrl+Enter commits and closes.
+  await page.keyboard.press('Control+Enter');
   await expect(textEditor).toBeHidden();
 
   // ----- Switch to Finetune. -----

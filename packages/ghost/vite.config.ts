@@ -19,15 +19,25 @@ export default defineConfig({
     minify: 'oxc',
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      formats: ['umd'],
-      name: 'pintura',
+      // ES module (not UMD): every host loads the bundle via dynamic `import()`
+      // and reads `window.pintura` from the `installGlobal` side effect, so no
+      // UMD global is needed — and ESM gives the entry a real `import.meta.url`,
+      // which is how emoji artwork locates itself next to the bundle.
+      formats: ['es'],
       fileName: () => 'kalotyp.js',
     },
-    rollupOptions: {
+    // Vite 8 runs on Rolldown; use its native `rolldownOptions` rather than the
+    // `rollupOptions` compatibility alias.
+    rolldownOptions: {
       external: [],
       output: {
+        // `build.minify` (above) minifies the CSS but, for an ES lib build in
+        // this rolldown-vite, does NOT whitespace-minify the JS — the output is
+        // only identifier-renamed, leaving ~100 KB of raw whitespace. The
+        // Rolldown-native `output.minify` forces a full JS minify. Don't remove
+        // it: the gzip diff is small but the raw/parse cost is not.
+        minify: true,
         assetFileNames: (asset) => (asset.name === 'style.css' ? 'kalotyp.css' : '[name][extname]'),
-        exports: 'named',
       },
     },
   },

@@ -66,9 +66,10 @@ test.describe('Ghost integration — annotate', () => {
     const editor = page.locator('.kalotyp-annotate-text-editor');
     await expect(editor).toBeVisible();
     await page.keyboard.type('LABEL');
-    await page.keyboard.press('Enter');
+    // Ctrl+Enter commits the text (plain Enter inserts a newline).
+    await page.keyboard.press('Control+Enter');
 
-    // Undo the text shape (Enter committed it).
+    // Undo the text shape we just committed.
     await page.locator('.kalotyp-history-undo').click();
 
     const [editedUpload] = await Promise.all([

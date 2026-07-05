@@ -1,22 +1,27 @@
 /**
  * Inline text editor for the text annotation tool.
  *
- * The editor renders a contenteditable `<div>` overlaid on the
- * annotation's image-space anchor. Using a `<div>` instead of a
- * `<textarea>` lets us match the canvas-side font and size precisely
- * (textareas restrict the visible padding/size combination on some
- * browsers). The element auto-sizes to its content and grows with the
- * text the user types (line breaks via Shift+Enter).
+ * Renders a transparent `<textarea>` overlaid on the annotation's image-space
+ * anchor. A textarea (rather than a contenteditable `<div>`) is used because it
+ * round-trips multi-line text — including empty and trailing lines — as a clean
+ * `\n` string via `.value`, with correct caret placement on every line. A
+ * contenteditable instead builds `<div>`/`<br>` blocks whose `innerText`
+ * mis-counts empty lines, drifting the caret from the canvas (which splits the
+ * text on `\n`).
+ *
+ * The textarea's own text is transparent — the visible glyphs are painted on the
+ * canvas by the same `paintText` the bake uses, so what you edit is
+ * byte-identical to what bakes and can never jump on commit. The element exists
+ * only to capture keystrokes and show the caret.
  *
  * Lifecycle:
- *   - `open(shape, viewport)`: position the editor over the shape,
- *     prefill its text, focus it. Each input event reports the new
- *     text via `onInput`. Pressing Enter (without Shift) commits;
- *     pressing Escape cancels.
+ *   - `open(shape, viewport)`: position over the shape, prefill, focus, caret at
+ *     end. Each input reports `.value` via `onInput`. Enter inserts a newline
+ *     (native); Cmd/Ctrl+Enter (or a click outside) commits; Escape cancels.
  *   - `close()`: hide the editor and blur it.
  *
- * The caller is responsible for committing the shape into the store
- * when the editor closes; the editor is presentational.
+ * The caller commits the shape into the store when the editor closes; the editor
+ * is presentational.
  */
 
 import {
@@ -45,25 +50,47 @@ export interface TextEditorHandle {
 }
 
 export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
-  const editor = document.createElement('div');
+  const editor = document.createElement('textarea');
   editor.className = 'kalotyp-annotate-text-editor';
-  editor.setAttribute('contenteditable', 'true');
-  editor.setAttribute('role', 'textbox');
-  editor.setAttribute('aria-multiline', 'true');
   editor.setAttribute('aria-label', 'Annotation text');
+  // No soft-wrapping: lines break only on explicit `\n`, matching the canvas
+  // (which never wraps). This also makes `scrollWidth` the widest line's width.
+  editor.setAttribute('wrap', 'off');
+  editor.setAttribute('autocomplete', 'off');
+  editor.setAttribute('autocapitalize', 'off');
+  editor.setAttribute('autocorrect', 'off');
   editor.spellcheck = false;
   editor.style.display = 'none';
   options.host.appendChild(editor);
 
   let activeShape: TextShape | null = null;
+  // Cap so a long line can't slide off-stage; set from the viewport in applyStyles.
+  let maxWidthPx = Number.POSITIVE_INFINITY;
+
+  /**
+   * Grow the textarea to fit its content exactly, so it never scrolls
+   * internally — an internal scroll would offset the caret from the painted
+   * lines. Height = line count × line-height; width = widest line (with `wrap`
+   * off, that's `scrollWidth`), so center/right alignment matches the canvas's
+   * block (whose width is also the widest line).
+   */
+  const autosize = (): void => {
+    editor.style.height = '0px';
+    editor.style.width = '0px';
+    editor.style.height = `${editor.scrollHeight}px`;
+    // +2px so the caret at a line's end isn't clipped; cap to the stage.
+    editor.style.width = `${Math.min(editor.scrollWidth + 2, maxWidthPx)}px`;
+  };
 
   const onInput = (): void => {
-    options.onInput(editor.innerText);
+    autosize();
+    options.onInput(editor.value);
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
-    // Enter without modifiers commits; Shift+Enter inserts a newline.
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      // Cmd/Ctrl+Enter commits; a plain Enter falls through to the textarea's
+      // native newline insertion.
       event.preventDefault();
       event.stopPropagation();
       options.onCommit();
@@ -99,17 +126,11 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
   document.addEventListener('pointerdown', onPointerDownOutside, true);
 
   /**
-   * Position the editor over the shape and match its font metrics. The editor's
-   * OWN text is kept transparent — the visible glyphs are painted on the canvas
-   * by the same `paintText` the bake uses, so what you edit is byte-identical to
-   * what bakes and can never jump on commit. This element exists only to capture
-   * keystrokes and show the caret; aligning a contenteditable's text layout to
-   * canvas `textBaseline:'top'` pixel-for-pixel is font-metric-dependent and
-   * unreliable, so we don't try — we just place the caret close.
+   * Position the editor over the shape and match its font metrics so the caret
+   * tracks the painted glyphs (same font/size/zoom + line-height). `shape.x,
+   * shape.y` is the block's top-left for every alignment, same as the canvas.
    */
   function applyStyles(shape: TextShape, viewport: Viewport): void {
-    // `shape.x, shape.y` is the block's top-left for every alignment (same as
-    // the canvas).
     const left = viewport.displayRect.x + shape.x * viewport.scale;
     const top = viewport.displayRect.y + shape.y * viewport.scale;
     editor.style.left = `${left}px`;
@@ -117,49 +138,39 @@ export function buildTextEditor(options: TextEditorOptions): TextEditorHandle {
     // Text is invisible (the canvas shows it); only the caret is coloured.
     editor.style.color = 'transparent';
     editor.style.caretColor = shape.color;
-    // Same font/size/zoom as the canvas so the caret tracks the painted glyphs
-    // horizontally (identical advances) and the line box matches vertically.
     editor.style.font = cssFontString(shape, viewport.scale);
     // The `font` shorthand resets `line-height` to `normal`; pin it to the
     // canvas line-height multiple so the caret height matches a painted line.
     editor.style.lineHeight = String(TEXT_LINE_HEIGHT);
     editor.style.textAlign = shape.textAlign;
     editor.style.transformOrigin = 'top left';
-    // Auto-size to content; cap the width so a long line can't slide off-stage.
-    editor.style.width = 'max-content';
-    const maxWidth = Math.max(100, viewport.displayRect.x + viewport.displayRect.width - left - 8);
-    editor.style.maxWidth = `${maxWidth}px`;
+    maxWidthPx = Math.max(40, viewport.displayRect.x + viewport.displayRect.width - left - 8);
+    autosize();
   }
 
   return {
     open(shape, viewport, source): void {
       activeShape = shape;
       editor.style.display = '';
+      editor.value = shape.text;
       applyStyles(shape, viewport);
-      editor.innerText = shape.text;
-      // Defer focus so the layout pass settles before we move the
-      // caret. Without this, Safari occasionally focuses but doesn't
-      // place the caret.
+      // Defer focus so the layout pass settles first. Without this, Safari
+      // occasionally focuses but doesn't place the caret.
       requestAnimationFrame(() => {
         editor.focus();
-        // Place caret at end.
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
+        const end = editor.value.length;
+        editor.setSelectionRange(end, end);
       });
-      // `source` is part of the API surface so the caller can pass it
-      // through unconditionally; the position math doesn't need it
-      // today but a future per-image-bound clamp would.
+      // `source` is part of the API surface so the caller can pass it through
+      // unconditionally; the position math doesn't need it today but a future
+      // per-image-bound clamp would.
       void source;
     },
     restyle(shape, viewport): void {
       if (activeShape === null) return;
       activeShape = shape;
-      // Restyle only — keep the text and the caret/selection untouched so the
-      // user can keep typing after, say, picking a font.
+      // Restyle only — the textarea keeps its value and selection across style
+      // changes, so the user can keep typing after, say, picking a font.
       applyStyles(shape, viewport);
     },
     close(): void {

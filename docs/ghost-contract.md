@@ -199,13 +199,19 @@ root carries no `dark` class, so the editor stays light by default.
 
 ## Emoji assets
 
-The annotate emoji tool renders [OpenMoji](https://openmoji.org) SVGs shipped in
-the package under `dist/emoji/`. They load on demand from the **same origin** as
-the bundle, resolved from `/emoji/` by default. If the bundle is served from a
-different path, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
-`setEmojiAssetBase`) to the directory that serves them, and allow that origin
-under `img-src` in any Content Security Policy (CSP). If the artwork can't be
-fetched, the editor falls back to the OS emoji font, so Save always works.
+The annotate emoji tool renders [OpenMoji](https://openmoji.org) SVGs on demand.
+They ship in the package under `dist/emoji/`, right next to the bundle. Because
+Ghost loads Kalotyp as an ES module via dynamic `import()` (see above), the entry
+reads its own absolute URL from `import.meta.url` and resolves the `emoji/`
+directory relative to it — so the artwork is always fetched from **the same
+origin the bundle was served from**, with no CDN and no per-site configuration.
+For example, a bundle at `https://accounts.magicpages.co/kalotyp/kalotyp.js`
+loads emoji from `https://accounts.magicpages.co/kalotyp/emoji/`. Allow that
+origin under `img-src` in any Content Security Policy (CSP). To serve the SVGs
+from somewhere else, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
+`setEmojiAssetBase`) to their URL — a host choice always wins over the derived
+default. If the artwork can't be fetched, the editor falls back to the OS emoji
+font, so Save always works.
 
 ## Settings the admin reads
 

@@ -66,6 +66,64 @@ describe('text editor — outside-click commit filtering', () => {
   });
 });
 
+describe('text editor — Enter inserts a newline, Cmd/Ctrl+Enter commits', () => {
+  function open(onCommit: () => void) {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const editor = buildTextEditor({ host, onInput: () => {}, onCommit, onCancel: () => {} });
+    editor.open(SHAPE, VIEWPORT, SOURCE);
+    // `open()` has appended the editor element; cast the `Element | null` from
+    // querySelector to the concrete element the tests dispatch events on.
+    const el = host.querySelector('.kalotyp-annotate-text-editor') as HTMLElement;
+    return { editor, el };
+  }
+  const key = (init: KeyboardEventInit) =>
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init });
+
+  it('does not commit on a plain Enter (it should add a line break)', () => {
+    const onCommit = vi.fn();
+    const { editor, el } = open(onCommit);
+    el.dispatchEvent(key({}));
+    expect(onCommit).not.toHaveBeenCalled();
+    editor.destroy();
+  });
+
+  it('commits on Cmd+Enter and Ctrl+Enter', () => {
+    const onCommit = vi.fn();
+    const { editor, el } = open(onCommit);
+    el.dispatchEvent(key({ metaKey: true }));
+    el.dispatchEvent(key({ ctrlKey: true }));
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    editor.destroy();
+  });
+});
+
+describe('text editor — multi-line round-trip (textarea)', () => {
+  it('is a textarea whose value round-trips newlines and empty lines exactly', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const seen: string[] = [];
+    const editor = buildTextEditor({
+      host,
+      onInput: (t) => seen.push(t),
+      onCommit: () => {},
+      onCancel: () => {},
+    });
+    editor.open(SHAPE, VIEWPORT, SOURCE);
+    // The editor renders a <textarea>; cast to read `.value` / `.tagName`
+    // (asserted below).
+    const el = host.querySelector('.kalotyp-annotate-text-editor') as HTMLTextAreaElement;
+    // A textarea, not a contenteditable — block elements would make `innerText`
+    // over-count empty lines and drift the caret from the canvas.
+    expect(el.tagName).toBe('TEXTAREA');
+    // Empty middle lines survive verbatim (the bug was a phantom extra line).
+    el.value = 'test\ntest\n\nend';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(seen.at(-1)).toBe('test\ntest\n\nend');
+    editor.destroy();
+  });
+});
+
 describe('text editor — positioning (transparent input over the canvas)', () => {
   function openAt(shape: TextShape, viewport: Viewport) {
     const host = document.createElement('div');

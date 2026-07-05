@@ -168,7 +168,9 @@
   resize: none;
   overflow: hidden;
   white-space: pre;
-  line-height: 1.2;
+  /* line-height is set inline in JS from the shared TEXT_LINE_HEIGHT (see
+   * text-editor.ts / text-layout.ts) so the caret matches the painted lines;
+   * not duplicated here, to avoid drifting from that constant. */
 }
 
 /*

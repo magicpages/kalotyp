@@ -72,6 +72,8 @@ describe('text editor — Enter inserts a newline, Cmd/Ctrl+Enter commits', () =
     document.body.appendChild(host);
     const editor = buildTextEditor({ host, onInput: () => {}, onCommit, onCancel: () => {} });
     editor.open(SHAPE, VIEWPORT, SOURCE);
+    // `open()` has appended the editor element; cast the `Element | null` from
+    // querySelector to the concrete element the tests dispatch events on.
     const el = host.querySelector('.kalotyp-annotate-text-editor') as HTMLElement;
     return { editor, el };
   }
@@ -108,6 +110,8 @@ describe('text editor — multi-line round-trip (textarea)', () => {
       onCancel: () => {},
     });
     editor.open(SHAPE, VIEWPORT, SOURCE);
+    // The editor renders a <textarea>; cast to read `.value` / `.tagName`
+    // (asserted below).
     const el = host.querySelector('.kalotyp-annotate-text-editor') as HTMLTextAreaElement;
     // A textarea, not a contenteditable — block elements would make `innerText`
     // over-count empty lines and drift the caret from the canvas.

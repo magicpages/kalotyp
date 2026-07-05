@@ -26,7 +26,9 @@ export default defineConfig({
       formats: ['es'],
       fileName: () => 'kalotyp.js',
     },
-    rollupOptions: {
+    // Vite 8 runs on Rolldown; use its native `rolldownOptions` rather than the
+    // `rollupOptions` compatibility alias.
+    rolldownOptions: {
       external: [],
       output: {
         // `build.minify` (above) minifies the CSS but, for an ES lib build in

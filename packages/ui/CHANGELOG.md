@@ -1,5 +1,14 @@
 # @magicpages/kalotyp-ui
 
+## 0.2.2
+
+### Patch Changes
+
+- 770597d: Keep emoji stickers crisp by clamping their maximum size. Emoji render with the OS colour-emoji font, which is bitmap on macOS/iOS (Apple Color Emoji, ~160px strikes) and Android/Linux (Noto); drawing a glyph larger than its native strike just upscales the bitmap and blurs. Emoji boxes are now capped at `EMOJI_MAX_SIZE` (160px, image-space) everywhere they're sized — the default placement size, corner-handle resize, and the Size coordinate input — so a sticker is never drawn past its crisp resolution. (Closes #31.)
+- d038279: Emoji now work with **no bundled artwork and no CDN** on the documented "upload the JS + CSS" setup. The emoji picker previously rendered each cell as an OpenMoji SVG `<img>`; where those SVGs aren't served next to the bundle (e.g. only the two files were uploaded into Ghost's integration settings, without the sibling `emoji/` directory) the cells showed broken images. The picker now renders the OS native colour-emoji glyph as the base and only reveals the OpenMoji SVG when that artwork actually loads — matching the canvas, which already falls back to the same OS font. Result: the picker and the baked image are consistent everywhere, crisp OpenMoji is used wherever the `emoji/` directory is served, and the bundle stays ~76 KB gzip (nothing embedded, no third-party request).
+- Updated dependencies [770597d]
+  - @magicpages/kalotyp-core@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

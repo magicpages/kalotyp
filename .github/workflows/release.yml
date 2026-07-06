@@ -61,6 +61,7 @@ jobs:
         run: pnpm build
 
       - name: Create Version PR or publish
+        id: changesets
         uses: changesets/action@v1
         with:
           # `pnpm run …`, not `pnpm version` — the latter is pnpm's built-in
@@ -75,3 +76,23 @@ jobs:
           # OIDC is present in CI, so provenance can be generated here. (Locally
           # this is left unset / false, since a local publish has no provider.)
           NPM_CONFIG_PROVENANCE: "true"
+
+      # Attach the built bundle to the GitHub Release for the `@magicpages/kalotyp`
+      # package. The documented setup is "upload the JS + CSS in Ghost's
+      # Settings → Integrations", so the release page must carry those two files
+      # directly (npm/jsDelivr already have them, but a plain download link is
+      # what the upload flow needs). `pnpm run release` (above) rebuilt dist just
+      # before publishing, so these are the exact artifacts that went to npm.
+      # Only runs when a publish actually happened (i.e. the Version PR merged),
+      # and the matching `@magicpages/kalotyp@<version>` release already exists
+      # (changesets/action created it in the step above).
+      - name: Attach kalotyp.js + kalotyp.css to the GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(node -p "require('./packages/ghost/package.json').version")"
+          gh release upload "@magicpages/kalotyp@${version}" \
+            packages/ghost/dist/kalotyp.js \
+            packages/ghost/dist/kalotyp.css \
+            --clobber

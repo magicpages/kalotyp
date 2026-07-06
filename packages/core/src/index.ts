@@ -121,6 +121,7 @@ export {
   defaultStylePalette,
   deleteShape,
   type EllipseShape,
+  EMOJI_MAX_SIZE,
   EMOJI_MIN_SIZE,
   type EmojiShape,
   FREEHAND_DEFAULT_STROKE,

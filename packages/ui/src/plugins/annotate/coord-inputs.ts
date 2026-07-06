@@ -25,6 +25,7 @@
 import {
   type ArrowShape,
   type EllipseShape,
+  EMOJI_MAX_SIZE,
   EMOJI_MIN_SIZE,
   type EmojiShape,
   normalizeAngle,
@@ -109,8 +110,8 @@ const TEXT_FIELDS: ReadonlyArray<FieldSpec> = [
 const EMOJI_FIELDS: ReadonlyArray<FieldSpec> = [
   { id: 'x', label: 'X' },
   { id: 'y', label: 'Y' },
-  // Keep the control's floor in sync with the clamp in `applyCoordEdit`.
-  { id: 'size', label: 'Size', min: EMOJI_MIN_SIZE },
+  // Keep the control's floor + ceiling in sync with the clamp in `applyCoordEdit`.
+  { id: 'size', label: 'Size', min: EMOJI_MIN_SIZE, max: EMOJI_MAX_SIZE },
   { id: 'rotation', label: 'Angle', unit: 'degrees' },
 ];
 
@@ -364,7 +365,7 @@ export function applyCoordEdit(shape: Shape, edit: ShapeCoordEdit): Shape {
         ...shape,
         x: edit.x,
         y: edit.y,
-        size: Math.max(EMOJI_MIN_SIZE, edit.size),
+        size: Math.min(EMOJI_MAX_SIZE, Math.max(EMOJI_MIN_SIZE, edit.size)),
         rotation: normalizeAngle(edit.rotation),
       };
       return next;

@@ -11,6 +11,7 @@ import type {
   Shape,
   TextShape,
 } from '@magicpages/kalotyp-core';
+import { EMOJI_MAX_SIZE } from '@magicpages/kalotyp-core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applyCoordEdit, buildCoordInputs } from './coord-inputs.js';
 
@@ -209,6 +210,17 @@ describe('applyCoordEdit', () => {
       rotation: 0,
     }) as EmojiShape;
     expect(next.size).toBeGreaterThan(0);
+  });
+
+  it('caps an emoji size edit at EMOJI_MAX_SIZE so it stays crisp', () => {
+    const next = applyCoordEdit(EMOJI, {
+      kind: 'emoji',
+      x: 5,
+      y: 6,
+      size: 9999,
+      rotation: 0,
+    }) as EmojiShape;
+    expect(next.size).toBe(EMOJI_MAX_SIZE);
   });
 
   it('wraps an out-of-range emoji angle into [0, 360)', () => {

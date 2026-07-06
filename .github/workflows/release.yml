@@ -92,7 +92,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version="$(node -p "require('./packages/ghost/package.json').version")"
-          gh release upload "@magicpages/kalotyp@${version}" \
+          tag="@magicpages/kalotyp@${version}"
+          gh release upload "$tag" \
             packages/ghost/dist/kalotyp.js \
             packages/ghost/dist/kalotyp.css \
             --clobber
+          # The @magicpages/kalotyp bundle is the artifact users download and
+          # upload into Ghost, so mark ITS release "Latest". Changesets publishes
+          # a release per linked package and GitHub would otherwise flag the
+          # last-created one (@magicpages/kalotyp-ui — source only, no JS/CSS) as
+          # Latest, so anyone landing on the Releases page wouldn't see the files.
+          gh release edit "$tag" --latest

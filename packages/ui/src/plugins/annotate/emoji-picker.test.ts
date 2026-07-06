@@ -53,6 +53,23 @@ describe('emoji picker', () => {
     expect(img?.getAttribute('alt')).toBe('');
   });
 
+  it('falls back to an OS-font glyph so cells show without the SVGs', () => {
+    // The glyph is the base layer: when the emoji artwork isn't served next to
+    // the bundle (e.g. only the JS + CSS were uploaded into Ghost) the SVG never
+    // loads and this text stays, instead of a broken image. The SVG overlay is
+    // revealed (via `.is-loaded`) only on a successful load — which jsdom never
+    // fires — so here the glyph is the visible layer, matching that path.
+    const { host } = setup();
+    const first = cells(host)[0];
+    const glyph = first?.querySelector<HTMLElement>('.kalotyp-annotate-emoji-glyph');
+    expect(glyph).not.toBeNull();
+    expect(glyph?.textContent).toBe(first?.dataset.char);
+    // Not yet upgraded to artwork (no load event fired).
+    const img = first?.querySelector<HTMLImageElement>('img.kalotyp-annotate-emoji-cell-img');
+    expect(img?.classList.contains('is-loaded')).toBe(false);
+    expect(glyph?.hidden).toBe(false);
+  });
+
   it('reports the chosen character when a cell is clicked', () => {
     const { host, selected } = setup();
     const first = cells(host)[0];

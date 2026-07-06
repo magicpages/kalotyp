@@ -70,17 +70,21 @@ air-gapped install), the editor falls back to the system font and keeps working;
 saved images bake with whatever font is available. To allow the fonts under a
 content-security policy, permit `fonts.bunny.net` in `style-src`/`font-src`.
 
-The emoji sticker tool renders emojis as [OpenMoji](https://openmoji.org)
-vector artwork (so they stay crisp at any size, unlike the platform's bitmap
-emoji font). The SVGs ship in the package under `dist/emoji/`, right next to the
-bundle, and each emoji is fetched on demand from **the same origin the bundle
-was served from** — the editor resolves the `emoji/` directory relative to its
-own URL (`import.meta.url`). So they just work wherever you host `kalotyp.js`,
-with no CDN and no per-site configuration. Allow that origin under `img-src` in
-your CSP. To serve the SVGs from somewhere else, set
-`window.__KALOTYP_EMOJI_BASE__` (or call `setEmojiAssetBase`) to their URL. If an
-emoji can't be loaded, the editor falls back to the OS emoji font, so Save still
-works.
+The emoji sticker tool works out of the box with **no extra assets** — emoji
+render with the operating system's native colour-emoji font, both in the picker
+and when baked into the image. Nothing is fetched from a third party, so the
+2-file setup above (upload `kalotyp.js` + `kalotyp.css`) is all you need.
+
+Optionally, for **crisper** emoji that look identical across devices, Kalotyp
+will use [OpenMoji](https://openmoji.org) vector artwork when it's available. The
+SVGs ship in the package under `dist/emoji/`; if you serve that directory next
+to the bundle (the editor resolves `emoji/` relative to its own URL via
+`import.meta.url`, so no configuration is needed), the picker and canvas upgrade
+to the crisp artwork automatically. Where the directory isn't served they simply
+stay on the OS font — no broken images, no failed requests that matter. To host
+the SVGs elsewhere, set `window.__KALOTYP_EMOJI_BASE__` (or call
+`setEmojiAssetBase`) to their URL, and allow that origin under `img-src` in your
+CSP.
 
 OpenMoji is licensed under
 [CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/); the bundled

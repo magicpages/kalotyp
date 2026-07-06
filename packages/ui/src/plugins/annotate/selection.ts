@@ -20,6 +20,7 @@ import {
   type AnnotateState,
   type ArrowShape,
   boundingBoxOf,
+  EMOJI_MAX_SIZE,
   EMOJI_MIN_SIZE,
   normalizeAngle,
   type Rect,
@@ -324,7 +325,12 @@ export function applyHandleDrag(
       const anchorBottom = direction === 'tl' || direction === 'tr';
       const dx = anchorRight ? right - image.x : image.x - x;
       const dy = anchorBottom ? bottom - image.y : image.y - y;
-      const nextSize = Math.max(EMOJI_MIN_SIZE, Math.round(Math.max(dx, dy)));
+      // Clamp to [MIN, MAX]: the upper bound keeps the OS-font glyph within its
+      // native bitmap strike so it stays crisp rather than upscaled (see #31).
+      const nextSize = Math.min(
+        EMOJI_MAX_SIZE,
+        Math.max(EMOJI_MIN_SIZE, Math.round(Math.max(dx, dy))),
+      );
       const nextX = anchorRight ? right - nextSize : x;
       const nextY = anchorBottom ? bottom - nextSize : y;
       return { ...shape, x: nextX, y: nextY, size: nextSize };

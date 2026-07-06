@@ -154,10 +154,20 @@ export const DEFAULT_FONT_KEY = 'system';
 export const DEFAULT_EMOJI = '😀';
 /** Smallest emoji sticker edge in image-space pixels (floor for handle resize). */
 export const EMOJI_MIN_SIZE = 8;
+/**
+ * Largest emoji sticker edge in image-space pixels. Emoji render with the OS
+ * colour-emoji font, which is bitmap on macOS/iOS (Apple Color Emoji, strikes up
+ * to ~160px) and Android/Linux (Noto). Drawing a glyph larger than its native
+ * strike just upscales the bitmap and blurs, so capping the box at the strike
+ * size keeps system-font emoji crisp. 160 matches Apple's largest strike (the
+ * common creator platform). See issue #31.
+ */
+export const EMOJI_MAX_SIZE = 160;
 
 /**
  * Default edge length for a freshly placed emoji sticker, scaled to the image
- * so a sticker reads at a sensible size on both tiny and huge sources. Shared by
+ * so a sticker reads at a sensible size on both tiny and huge sources — but
+ * never past `EMOJI_MAX_SIZE`, so it stays crisp on large images. Shared by
  * click-placement and centre-insert so the two paths agree.
  */
 export function defaultEmojiSize(imageSize: {
@@ -165,7 +175,7 @@ export function defaultEmojiSize(imageSize: {
   readonly height: number;
 }): number {
   const shortEdge = Math.min(imageSize.width, imageSize.height);
-  return Math.max(64, Math.round(shortEdge * 0.2));
+  return Math.min(EMOJI_MAX_SIZE, Math.max(64, Math.round(shortEdge * 0.2)));
 }
 
 /** Wrap an angle in degrees into the [0, 360) range. */

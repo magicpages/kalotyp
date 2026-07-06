@@ -8,6 +8,7 @@ import {
   defaultStylePalette,
   deleteShape,
   type EllipseShape,
+  EMOJI_MAX_SIZE,
   EMOJI_MIN_SIZE,
   type EmojiShape,
   findShape,
@@ -294,6 +295,13 @@ describe('annotate state', () => {
     it('defaultEmojiSize floors at 64px on tiny images', () => {
       expect(defaultEmojiSize({ width: 1000, height: 800 })).toBe(160);
       expect(defaultEmojiSize({ width: 100, height: 80 })).toBe(64);
+    });
+
+    it('defaultEmojiSize caps at EMOJI_MAX_SIZE on large images (stays crisp)', () => {
+      // 0.2 * 4000 = 800, but the OS emoji font's bitmap strike tops out ~160px,
+      // so a bigger box would just upscale and blur.
+      expect(defaultEmojiSize({ width: 4000, height: 3000 })).toBe(EMOJI_MAX_SIZE);
+      expect(EMOJI_MAX_SIZE).toBe(160);
     });
   });
 

@@ -1,4 +1,5 @@
 import {
+  EMOJI_MAX_SIZE,
   EMOJI_MIN_SIZE,
   type EmojiShape,
   type RectShape,
@@ -79,6 +80,13 @@ describe('applyHandleDrag — emoji resizes uniformly from the corners', () => {
   it('floors at EMOJI_MIN_SIZE so the sticker never collapses', () => {
     const next = applyHandleDrag(emoji, 'br', { x: 101, y: 101 }) as EmojiShape;
     expect(next.size).toBe(EMOJI_MIN_SIZE);
+    expect(next).toMatchObject({ x: 100, y: 100 });
+  });
+
+  it('caps at EMOJI_MAX_SIZE so the OS-font glyph never upscales (stays crisp)', () => {
+    // Drag the corner far past the strike size — the box stops growing at the cap.
+    const next = applyHandleDrag(emoji, 'br', { x: 2000, y: 2000 }) as EmojiShape;
+    expect(next.size).toBe(EMOJI_MAX_SIZE);
     expect(next).toMatchObject({ x: 100, y: 100 });
   });
 

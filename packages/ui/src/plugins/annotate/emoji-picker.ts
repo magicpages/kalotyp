@@ -37,6 +37,38 @@ const GRID_COLUMNS = 8;
 /** Cap on rendered search matches — a guard against rendering a huge result DOM. */
 const MAX_SEARCH_RESULTS = 180;
 
+/**
+ * Give an emoji button its visual: the OS-font glyph as text, plus the OpenMoji
+ * SVG revealed over it once (if) that artwork loads. The glyph is the base so the
+ * picker always shows *something* — where the `emoji/` directory isn't served
+ * next to the bundle (e.g. only the JS + CSS were uploaded into Ghost) the SVG
+ * 404s and the glyph stays, matching the canvas, which falls back to the same OS
+ * emoji font. No broken-image icon; the SVG request is lazy and best-effort.
+ */
+function fillEmojiVisual(button: HTMLElement, char: string, key: string, imgClass: string): void {
+  const glyph = document.createElement('span');
+  glyph.className = 'kalotyp-annotate-emoji-glyph';
+  glyph.textContent = char;
+  // The button carries the accessible name; the glyph and image are decorative.
+  glyph.setAttribute('aria-hidden', 'true');
+
+  const img = document.createElement('img');
+  img.className = imgClass;
+  img.setAttribute('loading', 'lazy');
+  img.setAttribute('decoding', 'async');
+  img.alt = '';
+  img.draggable = false;
+  img.addEventListener('load', () => {
+    // Artwork is available → reveal it and drop the OS-font placeholder.
+    img.classList.add('is-loaded');
+    glyph.hidden = true;
+  });
+  // On error (no artwork at this origin) the glyph simply stays.
+  img.src = emojiSvgUrlForKey(key);
+
+  button.append(glyph, img);
+}
+
 export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle {
   let open = false;
   let activeGroupIndex = 0;
@@ -91,17 +123,12 @@ export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle
     tab.className = 'kalotyp-annotate-emoji-tab';
     tab.setAttribute('aria-label', group.label);
     tab.title = group.label;
-    // The group's first emoji as the tab icon — same OpenMoji artwork as the
-    // cells (crisp + consistent), rather than the OS glyph.
-    const firstKey = group.emojis[0]?.key;
-    if (firstKey) {
-      const tabImg = document.createElement('img');
-      tabImg.className = 'kalotyp-annotate-emoji-tab-img';
-      tabImg.setAttribute('loading', 'lazy');
-      tabImg.alt = '';
-      tabImg.draggable = false;
-      tabImg.src = emojiSvgUrlForKey(firstKey);
-      tab.appendChild(tabImg);
+    // The group's first emoji as the tab icon: OS-font glyph by default,
+    // upgraded to the OpenMoji SVG if that artwork loads (same treatment as the
+    // cells — see fillEmojiVisual).
+    const firstEmoji = group.emojis[0];
+    if (firstEmoji) {
+      fillEmojiVisual(tab, firstEmoji.char, firstEmoji.key, 'kalotyp-annotate-emoji-tab-img');
     }
     tab.addEventListener('click', () => {
       searchInput.value = '';
@@ -176,17 +203,10 @@ export function buildEmojiPicker(options: EmojiPickerOptions): EmojiPickerHandle
       cell.dataset.char = entry.char;
       cell.setAttribute('aria-label', entry.name);
       cell.title = entry.name;
-      // Render the OpenMoji SVG (same artwork the canvas bakes), lazily so only
-      // the cells scrolled into view fetch. Decorative — the button carries the
-      // accessible name.
-      const img = document.createElement('img');
-      img.className = 'kalotyp-annotate-emoji-cell-img';
-      img.setAttribute('loading', 'lazy');
-      img.setAttribute('decoding', 'async');
-      img.alt = '';
-      img.draggable = false;
-      img.src = emojiSvgUrlForKey(entry.key);
-      cell.appendChild(img);
+      // OS-font glyph by default, upgraded to the OpenMoji SVG when that artwork
+      // loads (same pixels the canvas bakes). Where the SVGs aren't served next
+      // to the bundle the glyph stays — no broken images.
+      fillEmojiVisual(cell, entry.char, entry.key, 'kalotyp-annotate-emoji-cell-img');
       cell.addEventListener('click', () => options.onSelect(entry.char));
       grid.appendChild(cell);
     });

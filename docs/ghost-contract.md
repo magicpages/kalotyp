@@ -199,19 +199,23 @@ root carries no `dark` class, so the editor stays light by default.
 
 ## Emoji assets
 
-The annotate emoji tool renders [OpenMoji](https://openmoji.org) SVGs on demand.
-They ship in the package under `dist/emoji/`, right next to the bundle. Because
-Ghost loads Kalotyp as an ES module via dynamic `import()` (see above), the entry
-reads its own absolute URL from `import.meta.url` and resolves the `emoji/`
-directory relative to it — so the artwork is always fetched from **the same
-origin the bundle was served from**, with no CDN and no per-site configuration.
-For example, a bundle at `https://accounts.magicpages.co/kalotyp/kalotyp.js`
-loads emoji from `https://accounts.magicpages.co/kalotyp/emoji/`. Allow that
-origin under `img-src` in any Content Security Policy (CSP). To serve the SVGs
-from somewhere else, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
-`setEmojiAssetBase`) to their URL — a host choice always wins over the derived
-default. If the artwork can't be fetched, the editor falls back to the OS emoji
-font, so Save always works.
+The annotate emoji tool renders emoji with the **OS native colour-emoji font**
+by default — in the picker and when baking — so it needs no assets and no
+network. Uploading just `kalotyp.js` + `kalotyp.css` yields a fully working emoji
+tool.
+
+For crisper, device-independent artwork, Kalotyp progressively upgrades to
+[OpenMoji](https://openmoji.org) SVGs when they're reachable. The SVGs ship in
+the package under `dist/emoji/`; because Ghost loads Kalotyp as an ES module via
+dynamic `import()` (see above), the entry reads its own URL from `import.meta.url`
+and resolves the `emoji/` directory relative to it. So if that directory is
+served next to the bundle — e.g. `https://accounts.magicpages.co/kalotyp/kalotyp.js`
+alongside `https://accounts.magicpages.co/kalotyp/emoji/` — the picker cells and
+the canvas swap to the crisp SVG automatically (allow that origin under `img-src`
+in any CSP). Where the directory isn't served, both the picker and the canvas
+stay on the OS font — no broken images and no bearing on Save. To host the SVGs
+elsewhere, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
+`setEmojiAssetBase`).
 
 ## Settings the admin reads
 

@@ -1,5 +1,18 @@
 # @magicpages/kalotyp-ui
 
+## 0.2.1
+
+### Patch Changes
+
+- 58ab95a: Fix an annotate selection glitch where the coordinate inputs (X / Y / Size / Angle) trapped focus. After typing a value and committing with Enter the field kept focus, so a subsequent drag-resize on the canvas left the Size field frozen at the typed value (it only refreshed after clicking outside the canvas), and Delete/Backspace edited the number field instead of removing the selected annotation. A pointer interaction on the stage now blurs a focused coordinate input, so the field syncs live with the drag, Delete removes the shape, and the selection no longer feels "stuck". Typing a value and pressing Delete _inside_ the field still edits the number, as before.
+- e5dd04c: Fix two annotate bugs:
+
+  - **Text:** pressing Enter now inserts a newline (text annotations are multi-line). Commit the text by clicking outside the editor or with Cmd/Ctrl+Enter — previously Enter closed the editor. Multi-line text, including empty and trailing lines, now stays aligned with the caret while editing (the inline editor is a `<textarea>`, so its content round-trips as clean `\n` text instead of drifting).
+  - **Emoji:** artwork now loads from the same origin the bundle was served from — the editor resolves the `emoji/` directory relative to its own URL (`import.meta.url`), so stickers work out of the box on hosted installs with no CDN and no per-site config. Previously the default `/emoji/` path resolved against the Ghost site root and 404'd. The Ghost bundle is now published as an ES module (every host already loads it via dynamic `import()`); to serve the SVGs from elsewhere, set `window.__KALOTYP_EMOJI_BASE__` or call `setEmojiAssetBase`.
+
+- Updated dependencies [e5dd04c]
+  - @magicpages/kalotyp-core@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

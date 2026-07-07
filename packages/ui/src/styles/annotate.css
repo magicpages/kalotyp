@@ -304,7 +304,6 @@
 }
 
 .kalotyp-annotate-emoji-tab {
-  position: relative;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -318,22 +317,6 @@
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-}
-
-/* OpenMoji artwork overlays the OS-font glyph, revealed only once it loads (so
- * a missing/404 SVG leaves the glyph visible rather than a broken image). */
-.kalotyp-annotate-emoji-tab-img {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 24px;
-  height: 24px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.kalotyp-annotate-emoji-tab-img.is-loaded {
-  opacity: 1;
 }
 
 .kalotyp-annotate-emoji-tab:hover {
@@ -364,7 +347,6 @@
 }
 
 .kalotyp-annotate-emoji-cell {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -387,25 +369,16 @@
   box-shadow: var(--kalotyp-focus-shadow);
 }
 
-/* Shared glyph placeholder for tabs + cells: the OS emoji font renders the
- * character at the button's font-size until (or unless) the SVG overlay loads. */
+/* Tabs + cells render the emoji as an OS colour-emoji glyph at the button's
+ * font-size (no bundled artwork). The font stack mirrors the canvas's
+ * EMOJI_FONT_STACK (packages/core/.../fonts.ts) so the picker preview matches
+ * the baked result rather than falling back through the surrounding UI font. */
 .kalotyp-annotate-emoji-glyph {
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji",
+    sans-serif;
   line-height: 1;
   pointer-events: none;
-}
-
-.kalotyp-annotate-emoji-cell-img {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 26px;
-  height: 26px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.kalotyp-annotate-emoji-cell-img.is-loaded {
-  opacity: 1;
 }
 
 .kalotyp-annotate-emoji-empty {

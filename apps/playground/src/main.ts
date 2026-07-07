@@ -1,10 +1,5 @@
 /// <reference lib="dom" />
 
-// The built bundle defaults emoji artwork to jsDelivr; point the playground at
-// its own locally-served `/emoji/` (see vite.config.ts) so dev exercises the
-// local build's assets rather than the published CDN copy.
-(window as { __KALOTYP_EMOJI_BASE__?: string }).__KALOTYP_EMOJI_BASE__ = '/emoji/';
-
 // Shape of the global Ghost's loader expects the editor module to set
 // (the global's name is fixed by Ghost's contract; the types are ours).
 interface EditorGlobal {

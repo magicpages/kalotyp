@@ -9,19 +9,6 @@ export interface AnnotateBakeInput {
   readonly shapes: ReadonlyArray<Shape>;
 }
 
-/**
- * Resolve an emoji character to a drawable image (its vector artwork). Returns
- * `null` when no image is available yet, so the caller falls back to the OS
- * emoji font. Supplied by the UI layer, which owns the async image cache —
- * keeping this module DOM-free (it just calls `drawImage` on whatever source it
- * is handed).
- */
-export type ResolveEmojiImage = (emoji: string) => CanvasImageSource | null;
-
-export interface PaintShapeOptions {
-  readonly resolveEmojiImage?: ResolveEmojiImage;
-}
-
 /** Re-exported from fonts.ts; the system stack is the default font key's value. */
 export { SYSTEM_FONT_STACK } from './fonts.js';
 
@@ -62,7 +49,6 @@ export async function awaitFontsForBake(shapes: ReadonlyArray<Shape>): Promise<v
 export async function bakeAnnotate(
   state: AnnotateBakeInput,
   source: SourceImage,
-  opts?: PaintShapeOptions,
 ): Promise<SourceImage> {
   if (state.shapes.length === 0) return source;
 
@@ -76,7 +62,7 @@ export async function bakeAnnotate(
   ctx.drawImage(source.bitmap, 0, 0, source.width, source.height);
 
   for (const shape of state.shapes) {
-    paintShape(ctx, shape, opts);
+    paintShape(ctx, shape);
   }
 
   return {
@@ -91,7 +77,6 @@ export async function bakeAnnotate(
 export function paintShape(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   shape: Shape,
-  opts?: PaintShapeOptions,
 ): void {
   switch (shape.kind) {
     case 'text':
@@ -113,7 +98,7 @@ export function paintShape(
       paintHighlight(ctx, shape);
       return;
     case 'emoji':
-      paintEmoji(ctx, shape, opts?.resolveEmojiImage);
+      paintEmoji(ctx, shape);
       return;
     default:
       assertNever(shape);
@@ -123,28 +108,52 @@ export function paintShape(
 function paintEmoji(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   shape: Shape & { kind: 'emoji' },
-  resolveEmojiImage?: ResolveEmojiImage,
 ): void {
-  // `shape.x, shape.y` is the box's top-left; the glyph fills the square box.
-  const image = resolveEmojiImage?.(shape.emoji) ?? null;
+  // Emoji render with the OS colour-emoji font — no bundled artwork. `shape.x,
+  // shape.y` + `size` is the square box the selection handles + hit-test bound;
+  // the glyph is centred and scaled to fill it. Size is clamped elsewhere
+  // (EMOJI_MAX_SIZE) so the OS font's bitmap strike never has to upscale.
+  const cx = shape.x + shape.size / 2;
+  const cy = shape.y + shape.size / 2;
   ctx.save();
   if (shape.rotation) {
     // Rotate about the box centre so the sticker spins in place.
-    const cx = shape.x + shape.size / 2;
-    const cy = shape.y + shape.size / 2;
     ctx.translate(cx, cy);
     ctx.rotate((shape.rotation * Math.PI) / 180);
     ctx.translate(-cx, -cy);
   }
-  if (image) {
-    // Vector artwork (OpenMoji SVG) rasterised at the box size — crisp at any size.
-    ctx.drawImage(image, shape.x, shape.y, shape.size, shape.size);
+  ctx.font = `${shape.size}px ${EMOJI_FONT_STACK}`;
+
+  // The glyph's ink doesn't fill the em box cleanly (it's offset within the em
+  // and, for Apple Color Emoji, taller than the font size), so a plain top-left
+  // draw sits off-centre from the box the handles bound. Measure the ink box
+  // and scale-fit it into the sticker box, centred, so the visible emoji lines
+  // up with the handles. Cast: jsdom / older engines omit the `actualBoundingBox*`
+  // metrics, so treat them as optional and fall back to a top-left draw.
+  const m = ctx.measureText(shape.emoji) as {
+    actualBoundingBoxLeft?: number;
+    actualBoundingBoxRight?: number;
+    actualBoundingBoxAscent?: number;
+    actualBoundingBoxDescent?: number;
+  };
+  const left = m.actualBoundingBoxLeft ?? 0;
+  const right = m.actualBoundingBoxRight ?? 0;
+  const ascent = m.actualBoundingBoxAscent ?? 0;
+  const descent = m.actualBoundingBoxDescent ?? 0;
+  const inkWidth = left + right;
+  const inkHeight = ascent + descent;
+
+  if (inkWidth > 0 && inkHeight > 0) {
+    const scale = Math.min(shape.size / inkWidth, shape.size / inkHeight);
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    // Put the ink box's centre at the (translated) box centre.
+    ctx.fillText(shape.emoji, (left - right) / 2, (ascent - descent) / 2);
   } else {
-    // Fallback: the OS emoji font (used before the SVG loads, in workers without
-    // a resolver, or if the artwork is unavailable). Colour comes from the font.
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.font = `${shape.size}px ${EMOJI_FONT_STACK}`;
     ctx.fillText(shape.emoji, shape.x, shape.y);
   }
   ctx.restore();

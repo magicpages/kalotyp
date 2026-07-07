@@ -75,9 +75,7 @@ export { type ChainLink, runUtilityChain } from './pipeline/run-chain.js';
 export {
   type AnnotateBakeInput,
   bakeAnnotate,
-  type PaintShapeOptions,
   paintShape,
-  type ResolveEmojiImage,
 } from './plugins/annotate/bake.js';
 export {
   cssFontString,

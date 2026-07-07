@@ -95,7 +95,7 @@ export interface EmojiShape extends ShapeBase {
   /** Top-left of the (square) sticker box, in image-space pixels. */
   readonly x: number;
   readonly y: number;
-  /** The emoji character; resolved to vector artwork at paint time. */
+  /** The emoji character; drawn with the OS colour-emoji font at paint time. */
   readonly emoji: string;
   /** Box edge length in image-space pixels; the glyph is drawn at this size. */
   readonly size: number;

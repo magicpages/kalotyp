@@ -197,25 +197,19 @@ chrome (`services/ui.js`). Because it is pure CSS, toggling Night Shift while th
 editor is open re-themes it instantly. Outside Ghost (e.g. the playground) the
 root carries no `dark` class, so the editor stays light by default.
 
-## Emoji assets
+## Emoji
 
-The annotate emoji tool renders emoji with the **OS native colour-emoji font**
-by default — in the picker and when baking — so it needs no assets and no
-network. Uploading just `kalotyp.js` + `kalotyp.css` yields a fully working emoji
-tool.
+The annotate emoji tool renders emoji with the **OS native colour-emoji font** —
+in the picker and when baking. No artwork is bundled or fetched, so uploading
+just `kalotyp.js` + `kalotyp.css` yields a fully working emoji tool with no CSP
+or hosting to configure.
 
-For crisper, device-independent artwork, Kalotyp progressively upgrades to
-[OpenMoji](https://openmoji.org) SVGs when they're reachable. The SVGs ship in
-the package under `dist/emoji/`; because Ghost loads Kalotyp as an ES module via
-dynamic `import()` (see above), the entry reads its own URL from `import.meta.url`
-and resolves the `emoji/` directory relative to it. So if that directory is
-served next to the bundle — e.g. `https://accounts.magicpages.co/kalotyp/kalotyp.js`
-alongside `https://accounts.magicpages.co/kalotyp/emoji/` — the picker cells and
-the canvas swap to the crisp SVG automatically (allow that origin under `img-src`
-in any CSP). Where the directory isn't served, both the picker and the canvas
-stay on the OS font — no broken images and no bearing on Save. To host the SVGs
-elsewhere, set `window.__KALOTYP_EMOJI_BASE__` (or call the UI's
-`setEmojiAssetBase`).
+The OS emoji fonts are bitmap on macOS/iOS (Apple Color Emoji) and Android/Linux
+(Noto), so a glyph drawn past its native strike would blur — and Firefox won't
+render Apple Color Emoji on canvas above ~254px at all. Sticker size is therefore
+clamped (`EMOJI_MAX_SIZE`) so the glyph is never upscaled. Appearance is
+whatever platform the editor runs on; the bake rasterises those pixels, so the
+saved image is consistent for all viewers.
 
 ## Settings the admin reads
 

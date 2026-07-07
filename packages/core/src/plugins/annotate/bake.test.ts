@@ -33,6 +33,16 @@ function stubCtx(metrics?: Record<string, number>) {
   return { ctx, calls, draws, ops };
 }
 
+/**
+ * Narrow the test stub to the DOM context type. The stub implements only the
+ * `CanvasRenderingContext2D` members `paintShape` touches (fillText, measureText,
+ * translate / scale / rotate, save / restore, and the font/align fields), so the
+ * cast is safe for these tests.
+ */
+function asCtx(ctx: ReturnType<typeof stubCtx>['ctx']): CanvasRenderingContext2D {
+  return ctx as unknown as CanvasRenderingContext2D;
+}
+
 function makeText(overrides: Partial<TextShape>): TextShape {
   return {
     id: 't',
@@ -55,7 +65,7 @@ describe('paintText — per-line alignment offsets from a fixed top-left origin'
 
   it('left: both lines start at shape.x; y steps by line height', () => {
     const { ctx, calls } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, makeText({ textAlign: 'left' }));
+    paintShape(asCtx(ctx), makeText({ textAlign: 'left' }));
     expect(calls).toEqual([
       { text: 'a', x: 100, y: 50 },
       { text: 'bbbb', x: 100, y: 50 + lineHeight },
@@ -64,7 +74,7 @@ describe('paintText — per-line alignment offsets from a fixed top-left origin'
 
   it('center: each line is centred within the 40px block', () => {
     const { ctx, calls } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, makeText({ textAlign: 'center' }));
+    paintShape(asCtx(ctx), makeText({ textAlign: 'center' }));
     // 'a' width 10 → offset (40-10)/2 = 15; 'bbbb' width 40 → offset 0.
     expect(calls[0]).toEqual({ text: 'a', x: 115, y: 50 });
     expect(calls[1]).toEqual({ text: 'bbbb', x: 100, y: 50 + lineHeight });
@@ -72,7 +82,7 @@ describe('paintText — per-line alignment offsets from a fixed top-left origin'
 
   it('right: each line is flush to the block right edge', () => {
     const { ctx, calls } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, makeText({ textAlign: 'right' }));
+    paintShape(asCtx(ctx), makeText({ textAlign: 'right' }));
     // 'a' width 10 → offset 40-10 = 30; 'bbbb' width 40 → offset 0.
     expect(calls[0]).toEqual({ text: 'a', x: 130, y: 50 });
     expect(calls[1]).toEqual({ text: 'bbbb', x: 100, y: 50 + lineHeight });
@@ -80,7 +90,7 @@ describe('paintText — per-line alignment offsets from a fixed top-left origin'
 
   it('always uses left textAlign + top baseline (no align-dependent anchor)', () => {
     const { ctx } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, makeText({ textAlign: 'right' }));
+    paintShape(asCtx(ctx), makeText({ textAlign: 'right' }));
     expect(ctx.textAlign).toBe('left');
     expect(ctx.textBaseline).toBe('top');
   });
@@ -99,13 +109,13 @@ describe('paintEmoji — single glyph at the box top-left, sized to the box edge
 
   it('draws the emoji at (x, y) with the box size as the font size', () => {
     const { ctx, calls } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, emoji);
+    paintShape(asCtx(ctx), emoji);
     expect(calls).toEqual([{ text: '🚀', x: 30, y: 40 }]);
   });
 
   it('sets a top-left, top-baseline font using the OS colour-emoji stack', () => {
     const { ctx } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, emoji);
+    paintShape(asCtx(ctx), emoji);
     expect(ctx.textAlign).toBe('left');
     expect(ctx.textBaseline).toBe('top');
     expect(ctx.font).toBe(`96px ${EMOJI_FONT_STACK}`);
@@ -114,7 +124,7 @@ describe('paintEmoji — single glyph at the box top-left, sized to the box edge
   it('rotates about the box centre when rotation is non-zero', () => {
     const { ctx, ops } = stubCtx();
     // size 96 at (30,40) → centre (78, 88); 90° = π/2.
-    paintShape(ctx as unknown as CanvasRenderingContext2D, { ...emoji, rotation: 90 });
+    paintShape(asCtx(ctx), { ...emoji, rotation: 90 });
     expect(ops).toEqual([
       `translate(78,88)`,
       `rotate(${(Math.PI / 2).toFixed(4)})`,
@@ -124,7 +134,7 @@ describe('paintEmoji — single glyph at the box top-left, sized to the box edge
 
   it('applies no rotation transform at 0°', () => {
     const { ctx, ops } = stubCtx();
-    paintShape(ctx as unknown as CanvasRenderingContext2D, emoji);
+    paintShape(asCtx(ctx), emoji);
     expect(ops).toEqual([]);
   });
 
@@ -137,7 +147,7 @@ describe('paintEmoji — single glyph at the box top-left, sized to the box edge
       actualBoundingBoxAscent: 100,
       actualBoundingBoxDescent: 20,
     });
-    paintShape(ctx as unknown as CanvasRenderingContext2D, emoji);
+    paintShape(asCtx(ctx), emoji);
     // box (30,40) size 96 → centre (78,88); fit scale = min(96/96, 96/120) = 0.8.
     expect(ops).toEqual(['translate(78,88)', 'scale(0.8,0.8)']);
     // ink centred at the origin: x = (10-86)/2 = -38, y = (100-20)/2 = 40.

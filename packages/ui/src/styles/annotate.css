@@ -370,8 +370,13 @@
 }
 
 /* Tabs + cells render the emoji as an OS colour-emoji glyph at the button's
- * font-size (no bundled artwork). */
+ * font-size (no bundled artwork). The font stack mirrors the canvas's
+ * EMOJI_FONT_STACK (packages/core/.../fonts.ts) so the picker preview matches
+ * the baked result rather than falling back through the surrounding UI font. */
 .kalotyp-annotate-emoji-glyph {
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji",
+    sans-serif;
   line-height: 1;
   pointer-events: none;
 }

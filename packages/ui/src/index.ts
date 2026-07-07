@@ -45,10 +45,6 @@ export {
   type OutputPopoverHandle,
   openOutputPopover,
 } from './output/popover.js';
-export {
-  setEmojiAssetBase,
-  setEmojiAssetBaseDefault,
-} from './plugins/annotate/emoji-images.js';
 export type {
   MountAnnotateHandle,
   MountAnnotateOptions,

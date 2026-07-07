@@ -72,23 +72,15 @@ content-security policy, permit `fonts.bunny.net` in `style-src`/`font-src`.
 
 The emoji sticker tool works out of the box with **no extra assets** — emoji
 render with the operating system's native colour-emoji font, both in the picker
-and when baked into the image. Nothing is fetched from a third party, so the
-2-file setup above (upload `kalotyp.js` + `kalotyp.css`) is all you need.
+and when baked into the image. Nothing is bundled and nothing is fetched from a
+third party, so the 2-file setup above (upload `kalotyp.js` + `kalotyp.css`) is
+all you need, and there's no CSP or hosting to configure.
 
-Optionally, for **crisper** emoji that look identical across devices, Kalotyp
-will use [OpenMoji](https://openmoji.org) vector artwork when it's available. The
-SVGs ship in the package under `dist/emoji/`; if you serve that directory next
-to the bundle (the editor resolves `emoji/` relative to its own URL via
-`import.meta.url`, so no configuration is needed), the picker and canvas upgrade
-to the crisp artwork automatically. Where the directory isn't served they simply
-stay on the OS font — no broken images, no failed requests that matter. To host
-the SVGs elsewhere, set `window.__KALOTYP_EMOJI_BASE__` (or call
-`setEmojiAssetBase`) to their URL, and allow that origin under `img-src` in your
-CSP.
-
-OpenMoji is licensed under
-[CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0/); the bundled
-emoji SVGs remain under that licence. Kalotyp's own code is MIT.
+Because the OS emoji fonts are bitmap on macOS/iOS (Apple Color Emoji) and
+Android/Linux (Noto), a glyph drawn larger than its native size would blur — so
+sticker size is capped (see `EMOJI_MAX_SIZE`) to keep emoji crisp. The emoji
+themselves look like whatever platform the editor runs on; the saved image bakes
+those pixels, so viewers see a consistent result regardless of their device.
 
 ## Repository layout
 

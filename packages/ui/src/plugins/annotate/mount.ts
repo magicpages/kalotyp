@@ -44,7 +44,6 @@ import {
   type ViewportController,
 } from '@magicpages/kalotyp-core';
 import { buildCoordInputs } from './coord-inputs.js';
-import { onEmojiImageLoad, resolveEmojiImage } from './emoji-images.js';
 import { buildEmojiPicker, type EmojiPickerHandle } from './emoji-picker.js';
 import { ensureAnnotateFontsLoaded } from './fonts-loader.js';
 import { type AnnotatePanel, buildAnnotatePanel } from './panel.js';
@@ -111,23 +110,12 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
       : computeViewport(stageDims, imageSize);
   }
 
-  // Shared paint options: the emoji resolver lets `paintShape` draw crisp SVG
-  // artwork (preview == bake) and fall back to the OS font until it loads.
-  const paintOpts = { resolveEmojiImage };
-
   function paintAll(): void {
     const rect = stage.container.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     paintImageLayer(stage.imageCanvas, source, rect.width, rect.height, viewport);
-    paintShapesLayer(
-      stage.shapesCanvas,
-      store.get().shapes,
-      rect.width,
-      rect.height,
-      viewport,
-      paintOpts,
-    );
-    paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport, paintOpts);
+    paintShapesLayer(stage.shapesCanvas, store.get().shapes, rect.width, rect.height, viewport);
+    paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport);
     selectionLayer.update(shapeForHandles(store.get()), viewport);
     repositionOpenEditor();
   }
@@ -159,14 +147,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   function paintShapes(): void {
     const rect = stage.container.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    paintShapesLayer(
-      stage.shapesCanvas,
-      store.get().shapes,
-      rect.width,
-      rect.height,
-      viewport,
-      paintOpts,
-    );
+    paintShapesLayer(stage.shapesCanvas, store.get().shapes, rect.width, rect.height, viewport);
   }
 
   function paintLive(): void {
@@ -175,7 +156,7 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     if (liveMarquee !== null) {
       paintMarqueeLayer(stage.liveCanvas, liveMarquee, rect.width, rect.height, viewport);
     } else {
-      paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport, paintOpts);
+      paintLiveLayer(stage.liveCanvas, liveShape, rect.width, rect.height, viewport);
     }
   }
 
@@ -640,12 +621,6 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
   // metrics, so without this the committed text renders with a fallback face
   // and only corrects (appears to "jump") on the next interaction.
   const stopFontWatch = ensureAnnotateFontsLoaded(() => paintShapes());
-  // Repaint when emoji artwork finishes loading so a placed sticker swaps from
-  // the font fallback to the crisp SVG without needing another interaction.
-  const stopEmojiWatch = onEmojiImageLoad(() => {
-    paintShapes();
-    paintLive();
-  });
   // Reflect the initial tool/selection in the per-mode control visibility.
   syncToolControls(initialState);
   if (initialState.activeTool === 'emoji') emojiPicker.show();
@@ -793,7 +768,6 @@ export function mountAnnotateUtility(options: MountAnnotateOptions): MountAnnota
     destroy() {
       document.removeEventListener('keydown', onKeyDown, true);
       stopFontWatch();
-      stopEmojiWatch();
       removeHitDrag();
       unsubscribe();
       unsubscribeViewport?.();

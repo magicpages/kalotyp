@@ -19,9 +19,6 @@ importers:
       '@changesets/cli':
         specifier: 2.31.0
         version: 2.31.0(@types/node@25.9.3)
-      openmoji:
-        specifier: ^17.0.0
-        version: 17.0.0
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1302,9 +1299,6 @@ packages:
   opener@1.5.2:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
-
-  openmoji@17.0.0:
-    resolution: {integrity: sha512-EBnYrNGdcdw+OSXmENeNE1yBNRu6tOraTmoOyUbJkTmvT/+XETp8RZLSJFzD3lrPc5N9CzsyPnRTk0Vp4UaI9w==}
 
   outdent@0.5.0:
     resolution: {integrity: sha512-/jHxFIzoMXdqPzTaCpFzAAWhpkSjZPF4Vsn6jAfNpmbH/ymsmd7Qc6VE9BGn0L6YMj6uwpQLxCECpus4ukKS9Q==}
@@ -2944,8 +2938,6 @@ snapshots:
   obug@2.1.2: {}
 
   opener@1.5.2: {}
-
-  openmoji@17.0.0: {}
 
   outdent@0.5.0: {}
 

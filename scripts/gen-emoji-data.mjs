@@ -2,14 +2,12 @@
 /**
  * Generate the emoji catalogue used by the annotate emoji picker.
  *
- * Joins `unicode-emoji-json` (MIT — list/names/groups) with `openmoji`
- * (CC-BY-SA-4.0 — colour SVG artwork) via scripts/emoji-source.mjs, and emits a
- * compact, typed module at `packages/ui/src/plugins/annotate/emoji-data.ts`.
+ * Reads the list/names/groups from `unicode-emoji-json` (MIT) via
+ * scripts/emoji-source.mjs and emits a compact, typed module at
+ * `packages/ui/src/plugins/annotate/emoji-data.ts`.
  *
- * Each entry carries `{ char, name, key }` where `key` is the OpenMoji filename
- * stem; the runtime builds the SVG URL as `<assetBase>/<key>.svg`. The artwork
- * itself ships as static files (see copy-emoji-svgs.mjs) — never inlined here —
- * so the loaded bundle stays small.
+ * Each entry is `{ char, name }`. Emoji render with the OS colour-emoji font at
+ * runtime — no artwork is bundled — so no image key is needed.
  *
  * Regenerate with: pnpm gen:emoji
  */
@@ -22,10 +20,7 @@ import { getEmojiCatalogue } from './emoji-source.mjs';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outPath = resolve(repoRoot, 'packages/ui/src/plugins/annotate/emoji-data.ts');
 
-const { groups, missing } = await getEmojiCatalogue();
-if (missing.length > 0) {
-  console.warn(`WARNING: ${missing.length} emoji had no OpenMoji artwork and were dropped.`);
-}
+const { groups } = await getEmojiCatalogue();
 
 const total = groups.reduce((sum, g) => sum + g.emojis.length, 0);
 
@@ -37,10 +32,10 @@ const groupLines = groups.map((g) => `  ${JSON.stringify(g)},`).join('\n');
 const header = `/**
  * GENERATED FILE — do not edit by hand.
  *
- * Emoji catalogue for the annotate emoji picker. List/names from
- * unicode-emoji-json (MIT); \`key\` is the OpenMoji (CC-BY-SA-4.0) artwork
- * filename stem, resolved at generation time. Regenerate with \`pnpm gen:emoji\`
- * — see scripts/gen-emoji-data.mjs.
+ * Emoji catalogue for the annotate emoji picker. List/names/groups from
+ * unicode-emoji-json (MIT). Emoji render with the OS colour-emoji font — no
+ * artwork is bundled. Regenerate with \`pnpm gen:emoji\` — see
+ * scripts/gen-emoji-data.mjs.
  *
  * ${total} emojis across ${groups.length} groups.
  */
@@ -50,8 +45,6 @@ export interface EmojiEntry {
   readonly char: string;
   /** CLDR name, used as the search corpus and the picker button's accessible label. */
   readonly name: string;
-  /** OpenMoji artwork filename stem; the SVG URL is \`<assetBase>/<key>.svg\`. */
-  readonly key: string;
 }
 
 export interface EmojiGroup {

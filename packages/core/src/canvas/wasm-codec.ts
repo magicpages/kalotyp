@@ -33,6 +33,31 @@ let webpModulePromise: Promise<WasmEncodeModule> | undefined;
 let avifModulePromise: Promise<WasmEncodeModule> | undefined;
 
 /**
+ * Loads (and caches) the module for one codec. A rejected import is *not*
+ * cached: a transient failure (network blip, jsDelivr hiccup) would
+ * otherwise pin the module promise to that rejection forever, since `??=`
+ * only skips reassignment on `null`/`undefined` — a promise that will go on
+ * to reject is still non-nullish the instant it's created. Clearing the slot
+ * on failure lets the next call retry a fresh import instead of permanently
+ * failing until the page reloads.
+ */
+function loadWebpModule(): Promise<WasmEncodeModule> {
+  webpModulePromise ??= loader.importWebpEncoder().catch((error: unknown) => {
+    webpModulePromise = undefined;
+    throw error;
+  });
+  return webpModulePromise;
+}
+
+function loadAvifModule(): Promise<WasmEncodeModule> {
+  avifModulePromise ??= loader.importAvifEncoder().catch((error: unknown) => {
+    avifModulePromise = undefined;
+    throw error;
+  });
+  return avifModulePromise;
+}
+
+/**
  * Encode `imageData` to `mimeType` via the matching WASM codec. `quality` is
  * 0..1 (kalotyp's convention); both codecs take a 0..100 `quality` option
  * with the same "higher is better" direction, so it maps directly.
@@ -43,14 +68,8 @@ export async function encodeWithWasmCodec(
   quality: number,
 ): Promise<Blob> {
   const codecQuality = Math.round(quality * 100);
-  if (mimeType === 'image/webp') {
-    webpModulePromise ??= loader.importWebpEncoder();
-    const { default: encode } = await webpModulePromise;
-    const buffer = await encode(imageData, { quality: codecQuality });
-    return new Blob([buffer], { type: mimeType });
-  }
-  avifModulePromise ??= loader.importAvifEncoder();
-  const { default: encode } = await avifModulePromise;
+  const modulePromise = mimeType === 'image/webp' ? loadWebpModule() : loadAvifModule();
+  const { default: encode } = await modulePromise;
   const buffer = await encode(imageData, { quality: codecQuality });
   return new Blob([buffer], { type: mimeType });
 }

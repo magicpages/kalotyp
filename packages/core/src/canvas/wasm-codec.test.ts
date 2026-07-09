@@ -78,6 +78,22 @@ describe('encodeWithWasmCodec', () => {
     );
   });
 
+  it('retries the import after a failed load instead of caching the rejection', async () => {
+    const encode = vi.fn().mockResolvedValue(new ArrayBuffer(1));
+    const importWebp = vi
+      .spyOn(loader, 'importWebpEncoder')
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce({ default: encode });
+
+    await expect(encodeWithWasmCodec(FAKE_IMAGE_DATA, 'image/webp', 0.8)).rejects.toThrow(
+      'network error',
+    );
+    await encodeWithWasmCodec(FAKE_IMAGE_DATA, 'image/webp', 0.8);
+
+    expect(importWebp).toHaveBeenCalledTimes(2);
+    expect(encode).toHaveBeenCalledWith(FAKE_IMAGE_DATA, { quality: 80 });
+  });
+
   it('propagates errors thrown by the encoder itself', async () => {
     const encode = vi.fn().mockRejectedValue(new Error('Encoding error.'));
     vi.spyOn(loader, 'importWebpEncoder').mockResolvedValue({ default: encode });

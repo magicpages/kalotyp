@@ -120,7 +120,7 @@ describe('encodeSourceImage', () => {
     );
   });
 
-  it('retries with a native format when auto mode\'s WASM WebP encode fails', async () => {
+  it("retries with a native format when auto mode's WASM WebP encode fails", async () => {
     stubCanvas();
     // Native WebP unsupported (forcing the WASM path); native JPEG is.
     stubSupport({ 'image/jpeg': true });
@@ -137,7 +137,7 @@ describe('encodeSourceImage', () => {
     expect(file.type).toBe('image/jpeg');
   });
 
-  it('retries with PNG when auto mode\'s WASM WebP encode fails on an alpha-carrying source', async () => {
+  it("retries with PNG when auto mode's WASM WebP encode fails on an alpha-carrying source", async () => {
     stubCanvas();
     stubSupport({ 'image/jpeg': true, 'image/png': true });
     vi.spyOn(wasmCodec, 'encodeWithWasmCodec').mockRejectedValue(new Error('network error'));

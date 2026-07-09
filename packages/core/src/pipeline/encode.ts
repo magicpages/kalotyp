@@ -120,14 +120,18 @@ export async function encodeSourceImage(
   const name = deriveOutputName(options.sourceName, resolvedMime);
   // EXIF can only be re-attached on JPEG → JPEG; canvas re-encoding strips
   // unconditionally, so this is the only place metadata can survive.
-  const shouldPreserveMetadata =
+  const sourceBlob = options.sourceBlob;
+  const canPreserveMetadata =
     options.output?.stripMetadata === false &&
     resolvedMime === 'image/jpeg' &&
-    source.mimeType === 'image/jpeg' &&
-    options.sourceBlob !== undefined;
-  const blob = shouldPreserveMetadata
-    ? await copyJpegExif({ source: options.sourceBlob as Blob, output: baseBlob })
-    : baseBlob;
+    source.mimeType === 'image/jpeg';
+  // `sourceBlob !== undefined` is checked inline (rather than folded into
+  // canPreserveMetadata above) so TypeScript narrows this local straight
+  // through to the copyJpegExif call below, with no cast required.
+  const blob =
+    canPreserveMetadata && sourceBlob !== undefined
+      ? await copyJpegExif({ source: sourceBlob, output: baseBlob })
+      : baseBlob;
   return new File([blob], name, { type: resolvedMime });
 }
 

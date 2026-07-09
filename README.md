@@ -55,7 +55,7 @@ the JS and CSS URLs in **one** of these two places and restart Ghost:
 - **Environment variables** — `pintura__js` and `pintura__css` (Ghost maps the
   double underscore to nested config keys):
 
-  ```
+  ```bash
   pintura__js=https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.js
   pintura__css=https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.css
   ```

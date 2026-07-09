@@ -24,7 +24,7 @@ Plus:
 - **Follows Ghost's light/dark mode** automatically — it mirrors the admin's Night Shift setting with no configuration.
 - **WYSIWYG** — the on-screen preview is byte-for-byte what the saved image bakes.
 - **Keyboard-accessible** — every tool can be placed, nudged, and sized without a mouse.
-- **Tiny and private** — ~75 KB gzipped, no telemetry, no third-party calls beyond the optional web fonts.
+- **Tiny and private** — ~69 KB gzipped, no telemetry, no third-party calls beyond the optional web fonts.
 
 ## Install
 

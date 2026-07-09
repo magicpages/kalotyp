@@ -29,36 +29,55 @@ Plus:
 ## Install
 
 In Ghost admin, go to **Settings → Integrations → Pintura** and toggle the
-integration on. You can either **upload** the two build files, or **point Ghost
-at a CDN URL** — Ghost stores whatever URL you give it.
+integration on. The two fields in that modal are **file uploads**, so the normal
+setup is to upload the build files (Option A). If you'd rather have Ghost pull
+the files from a CDN, point it there through Ghost's config instead (Option B).
 
 > "Pintura" here is the name of Ghost's built-in image-editor integration slot,
 > not a reference to any particular editor. Kalotyp is an independent project and
 > is not affiliated with or endorsed by that editor; it simply implements the
 > integration interface Ghost exposes under this name.
 
-### Option A — CDN (no download)
-
-Paste these into the JS URL and CSS URL fields. Every published release is served
-automatically from [jsDelivr](https://www.jsdelivr.com/), a free, GDPR-compliant,
-multi-CDN that doesn't log personal data:
-
-```
-JS:  https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.js
-CSS: https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.css
-```
-
-These always serve the latest published release. Pin an exact version (e.g.
-`@magicpages/kalotyp@0.1.1/dist/kalotyp.js`) if you'd rather upgrade deliberately.
-The same files are mirrored on [unpkg](https://unpkg.com/) at
-`https://unpkg.com/@magicpages/kalotyp/dist/kalotyp.js` if you prefer.
-
-### Option B — Upload the files
+### Option A — Upload the files
 
 Download `kalotyp.js` and `kalotyp.css` from the
 [latest release](https://github.com/magicpages/kalotyp/releases/latest) (or build
-them locally with `pnpm build`) and upload both in the integration settings.
-That's the entire setup — no changes to Ghost itself.
+them locally with `pnpm build`), then upload both in the integration modal — the
+JS field takes `kalotyp.js`, the CSS field takes `kalotyp.css`. That's the entire
+setup — no changes to Ghost itself.
+
+### Option B — Serve from a CDN (config override)
+
+The upload fields don't accept a URL, but Ghost's runtime config can override
+where it loads the editor from. Toggle the integration on in the admin, then set
+the JS and CSS URLs in **one** of these two places and restart Ghost:
+
+- **Environment variables** — `pintura__js` and `pintura__css` (Ghost maps the
+  double underscore to nested config keys):
+
+  ```bash
+  pintura__js=https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.js
+  pintura__css=https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.css
+  ```
+
+- **`config.production.json`** — a `pintura` block with `js` and `css` keys:
+
+  ```json
+  {
+    "pintura": {
+      "js": "https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.js",
+      "css": "https://cdn.jsdelivr.net/npm/@magicpages/kalotyp/dist/kalotyp.css"
+    }
+  }
+  ```
+
+Every published release is served automatically from
+[jsDelivr](https://www.jsdelivr.com/), a free, GDPR-compliant, multi-CDN that
+doesn't log personal data. These URLs always serve the latest published release;
+pin an exact version (e.g. `@magicpages/kalotyp@0.2.3/dist/kalotyp.js`) if you'd
+rather upgrade deliberately. The same files are mirrored on
+[unpkg](https://unpkg.com/) at
+`https://unpkg.com/@magicpages/kalotyp/dist/kalotyp.js` if you prefer.
 
 ### Fonts & privacy
 

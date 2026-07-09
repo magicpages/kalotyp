@@ -21,8 +21,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       // ES module (not UMD): every host loads the bundle via dynamic `import()`
       // and reads `window.pintura` from the `installGlobal` side effect, so no
-      // UMD global is needed — and ESM gives the entry a real `import.meta.url`,
-      // which is how emoji artwork locates itself next to the bundle.
+      // UMD global is needed.
       formats: ['es'],
       fileName: () => 'kalotyp.js',
     },

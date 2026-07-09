@@ -38,18 +38,34 @@ export interface EncodeOptions {
 
 /**
  * Resolve the concrete output mime from `OutputState` against runtime support.
- * Explicit choices fall back to WebP then PNG; `'auto'` prefers WebP, then
- * JPEG for non-alpha sources, then PNG.
+ * Explicit choices fall back to WebP then PNG; `'auto'` prefers WebP.
+ *
+ * WebP is always producible per `canProduceMime` (native or WASM), so
+ * `'auto'` always resolves to it here — this function can't know in advance
+ * whether a network-dependent WASM fetch will actually succeed. If it
+ * doesn't, `encodeSourceImage` retries with `resolveNativeFallbackMime`
+ * instead of this function pre-committing to a fallback it can't verify.
+ * `source` is kept in the signature for API stability (this is part of the
+ * package's public surface, re-exported from `index.ts`) even though this
+ * implementation no longer needs to inspect it.
  */
-export async function resolveOutputMime(state: OutputState, source: SourceImage): Promise<string> {
+export async function resolveOutputMime(state: OutputState, _source: SourceImage): Promise<string> {
   if (state.mimeChoice !== 'auto') {
     if (await canProduceMime(state.mimeChoice)) return state.mimeChoice;
     if (await canProduceMime('image/webp')) return 'image/webp';
     return FALLBACK_MIME;
   }
-  if (await canProduceMime('image/webp')) return 'image/webp';
+  return 'image/webp';
+}
+
+/**
+ * The best format `encodeSourceImage` can produce without the WASM codec —
+ * JPEG for non-alpha sources when natively supported, otherwise PNG. Used
+ * when auto mode's preferred WebP encode fails at the WASM step.
+ */
+async function resolveNativeFallbackMime(source: SourceImage): Promise<string> {
   const sourceHasAlpha = ALPHA_CARRYING_SOURCE_MIMES.has(source.mimeType);
-  if (!sourceHasAlpha && (await canProduceMime('image/jpeg'))) return 'image/jpeg';
+  if (!sourceHasAlpha && (await canEncodeMime('image/jpeg'))) return 'image/jpeg';
   return FALLBACK_MIME;
 }
 
@@ -74,29 +90,45 @@ export async function encodeSourceImage(
   const outputState = options.output ?? DEFAULT_OUTPUT_STATE;
   const mimeType = await resolveOutputMime(outputState, source);
   const quality = clampQuality(outputState.quality);
-  const name = deriveOutputName(options.sourceName, mimeType);
   const bake = createBakeCanvas(source.width, source.height);
   const ctx = getBakeContext2D(bake);
   ctx.drawImage(source.bitmap, 0, 0);
-  const baseBlob =
-    isWasmEncodableMime(mimeType) && !(await canEncodeMime(mimeType))
-      ? await encodeWithWasmCodec(
-          ctx.getImageData(0, 0, source.width, source.height),
-          mimeType,
-          quality,
-        )
-      : await bakeCanvasToBlob(bake, mimeType, quality);
+
+  let resolvedMime = mimeType;
+  let baseBlob: Blob;
+  if (isWasmEncodableMime(mimeType) && !(await canEncodeMime(mimeType))) {
+    try {
+      baseBlob = await encodeWithWasmCodec(
+        ctx.getImageData(0, 0, source.width, source.height),
+        mimeType,
+        quality,
+      );
+    } catch (error) {
+      // 'auto' never committed the user to a specific format, so retry with
+      // whatever the browser can encode natively rather than fail the save
+      // outright. An explicit choice (the user picked WebP/AVIF by name) is
+      // not retried — its failure propagates so the user isn't silently
+      // handed a different format than the one they asked for.
+      if (outputState.mimeChoice !== 'auto') throw error;
+      resolvedMime = await resolveNativeFallbackMime(source);
+      baseBlob = await bakeCanvasToBlob(bake, resolvedMime, quality);
+    }
+  } else {
+    baseBlob = await bakeCanvasToBlob(bake, mimeType, quality);
+  }
+
+  const name = deriveOutputName(options.sourceName, resolvedMime);
   // EXIF can only be re-attached on JPEG → JPEG; canvas re-encoding strips
   // unconditionally, so this is the only place metadata can survive.
   const shouldPreserveMetadata =
     options.output?.stripMetadata === false &&
-    mimeType === 'image/jpeg' &&
+    resolvedMime === 'image/jpeg' &&
     source.mimeType === 'image/jpeg' &&
     options.sourceBlob !== undefined;
   const blob = shouldPreserveMetadata
     ? await copyJpegExif({ source: options.sourceBlob as Blob, output: baseBlob })
     : baseBlob;
-  return new File([blob], name, { type: mimeType });
+  return new File([blob], name, { type: resolvedMime });
 }
 
 function extensionForMime(mime: string): string {

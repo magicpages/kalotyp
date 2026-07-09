@@ -109,7 +109,7 @@ describe('encodeSourceImage', () => {
     expect(file.type).toBe('image/avif');
   });
 
-  it('propagates a WASM codec failure rather than silently downgrading the format', async () => {
+  it('propagates a WASM codec failure for an explicit choice rather than silently downgrading the format', async () => {
     stubCanvas();
     stubSupport({});
     vi.spyOn(wasmCodec, 'encodeWithWasmCodec').mockRejectedValue(new Error('network error'));
@@ -118,6 +118,39 @@ describe('encodeSourceImage', () => {
     await expect(encodeSourceImage(FULL_SOURCE, { output: state })).rejects.toThrow(
       'network error',
     );
+  });
+
+  it('retries with a native format when auto mode\'s WASM WebP encode fails', async () => {
+    stubCanvas();
+    // Native WebP unsupported (forcing the WASM path); native JPEG is.
+    stubSupport({ 'image/jpeg': true });
+    vi.spyOn(wasmCodec, 'encodeWithWasmCodec').mockRejectedValue(new Error('network error'));
+    const bakeToBlob = vi
+      .spyOn(bakeCanvas, 'bakeCanvasToBlob')
+      .mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const jpegSource: SourceImage = { ...FULL_SOURCE, mimeType: 'image/jpeg' };
+
+    const file = await encodeSourceImage(jpegSource, { output: state });
+
+    expect(bakeToBlob).toHaveBeenCalledWith(expect.anything(), 'image/jpeg', 0.8);
+    expect(file.type).toBe('image/jpeg');
+  });
+
+  it('retries with PNG when auto mode\'s WASM WebP encode fails on an alpha-carrying source', async () => {
+    stubCanvas();
+    stubSupport({ 'image/jpeg': true, 'image/png': true });
+    vi.spyOn(wasmCodec, 'encodeWithWasmCodec').mockRejectedValue(new Error('network error'));
+    const bakeToBlob = vi
+      .spyOn(bakeCanvas, 'bakeCanvasToBlob')
+      .mockResolvedValue(new Blob(['x'], { type: 'image/png' }));
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const pngSource: SourceImage = { ...FULL_SOURCE, mimeType: 'image/png' };
+
+    const file = await encodeSourceImage(pngSource, { output: state });
+
+    expect(bakeToBlob).toHaveBeenCalledWith(expect.anything(), 'image/png', 0.8);
+    expect(file.type).toBe('image/png');
   });
 });
 

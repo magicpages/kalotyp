@@ -1,4 +1,10 @@
-import { bakeCanvasToBlob, canEncodeMime, createBakeCanvas } from '../canvas/bake-canvas.js';
+import {
+  bakeCanvasToBlob,
+  canEncodeMime,
+  createBakeCanvas,
+  getBakeContext2D,
+} from '../canvas/bake-canvas.js';
+import { encodeWithWasmCodec, isWasmEncodableMime } from '../canvas/wasm-codec.js';
 import { clampQuality, DEFAULT_OUTPUT_STATE, type OutputState } from '../output/state.js';
 import type { SourceImage } from '../plugins/utility.js';
 import { copyJpegExif } from './exif.js';
@@ -6,6 +12,16 @@ import { copyJpegExif } from './exif.js';
 const FALLBACK_MIME = 'image/png';
 
 const ALPHA_CARRYING_SOURCE_MIMES = new Set(['image/png', 'image/webp', 'image/avif']);
+
+/**
+ * WebP/AVIF are always producible: natively where Canvas 2D supports them,
+ * otherwise via the WASM codec fallback (`wasm-codec.ts`). Only PNG/JPEG
+ * still depend on the runtime's actual Canvas support.
+ */
+async function canProduceMime(mimeType: string): Promise<boolean> {
+  if (isWasmEncodableMime(mimeType)) return true;
+  return canEncodeMime(mimeType);
+}
 
 export interface EncodeOptions {
   /** Original source URL or filename, if any — used to derive the output name. */
@@ -27,13 +43,13 @@ export interface EncodeOptions {
  */
 export async function resolveOutputMime(state: OutputState, source: SourceImage): Promise<string> {
   if (state.mimeChoice !== 'auto') {
-    if (await canEncodeMime(state.mimeChoice)) return state.mimeChoice;
-    if (await canEncodeMime('image/webp')) return 'image/webp';
+    if (await canProduceMime(state.mimeChoice)) return state.mimeChoice;
+    if (await canProduceMime('image/webp')) return 'image/webp';
     return FALLBACK_MIME;
   }
-  if (await canEncodeMime('image/webp')) return 'image/webp';
+  if (await canProduceMime('image/webp')) return 'image/webp';
   const sourceHasAlpha = ALPHA_CARRYING_SOURCE_MIMES.has(source.mimeType);
-  if (!sourceHasAlpha && (await canEncodeMime('image/jpeg'))) return 'image/jpeg';
+  if (!sourceHasAlpha && (await canProduceMime('image/jpeg'))) return 'image/jpeg';
   return FALLBACK_MIME;
 }
 
@@ -60,16 +76,16 @@ export async function encodeSourceImage(
   const quality = clampQuality(outputState.quality);
   const name = deriveOutputName(options.sourceName, mimeType);
   const bake = createBakeCanvas(source.width, source.height);
-  if (bake.kind === 'offscreen') {
-    const ctx = bake.canvas.getContext('2d');
-    if (!ctx) throw new Error('2D canvas context is not available');
-    ctx.drawImage(source.bitmap, 0, 0);
-  } else {
-    const ctx = bake.canvas.getContext('2d');
-    if (!ctx) throw new Error('2D canvas context is not available');
-    ctx.drawImage(source.bitmap, 0, 0);
-  }
-  const baseBlob = await bakeCanvasToBlob(bake, mimeType, quality);
+  const ctx = getBakeContext2D(bake);
+  ctx.drawImage(source.bitmap, 0, 0);
+  const baseBlob =
+    isWasmEncodableMime(mimeType) && !(await canEncodeMime(mimeType))
+      ? await encodeWithWasmCodec(
+          ctx.getImageData(0, 0, source.width, source.height),
+          mimeType,
+          quality,
+        )
+      : await bakeCanvasToBlob(bake, mimeType, quality);
   // EXIF can only be re-attached on JPEG → JPEG; canvas re-encoding strips
   // unconditionally, so this is the only place metadata can survive.
   const shouldPreserveMetadata =

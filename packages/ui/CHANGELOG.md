@@ -1,5 +1,12 @@
 # @magicpages/kalotyp-ui
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [d2fb5da]
+  - @magicpages/kalotyp-core@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes

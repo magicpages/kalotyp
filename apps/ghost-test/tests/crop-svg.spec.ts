@@ -31,16 +31,23 @@ function svgDataUrl(markup: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(markup).toString('base64')}`;
 }
 
+// The axe-host fixture's inline script injects `openEditor` and `__lastProcess`
+// onto `window`; neither exists on the ambient `Window` type, so every access
+// below reaches them through `window as unknown as FixtureWindow`.
+type FixtureWindow = {
+  openEditor: (overrides?: { src?: string }) => void;
+  __lastProcess: File | null;
+};
+
 test.describe('SVG source — crop', () => {
   test('a viewBox-only SVG loads at its real size and crops correctly', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(
-      () => typeof (window as unknown as { openEditor?: unknown }).openEditor === 'function',
+      () => typeof (window as unknown as FixtureWindow).openEditor === 'function',
     );
 
     await page.evaluate(
-      (src) =>
-        (window as unknown as { openEditor: (o: { src: string }) => void }).openEditor({ src }),
+      (src) => (window as unknown as FixtureWindow).openEditor({ src }),
       svgDataUrl(SVG_NO_SIZE),
     );
 
@@ -58,11 +65,12 @@ test.describe('SVG source — crop', () => {
 
     await page.locator('.kalotyp-button-export').click();
     await page.waitForFunction(
-      () => (window as unknown as { __lastProcess?: unknown }).__lastProcess instanceof File,
+      () => (window as unknown as FixtureWindow).__lastProcess instanceof File,
     );
 
     const out = await page.evaluate(async () => {
-      const file = (window as unknown as { __lastProcess: File }).__lastProcess;
+      const file = (window as unknown as FixtureWindow).__lastProcess;
+      if (!file) throw new Error('no processed file');
       const bmp = await createImageBitmap(file);
       const canvas = document.createElement('canvas');
       canvas.width = bmp.width;

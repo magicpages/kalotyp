@@ -23,12 +23,13 @@ export async function loadImage(src: string | Blob | File): Promise<LoadedImage>
   const blob = await toBlob(src);
 
   // SVG: rasterise to a fixed pixel size before anything downstream touches it.
-  if (blob && isSvgBlob(blob)) {
-    try {
-      return await rasterizeSvgBlob(blob);
-    } catch {
-      // No DOM / 2D canvas (non-browser host) — fall through to generic paths.
-    }
+  // Gate on a DOM being present, and inside the browser let any rasterisation
+  // *failure* propagate rather than catching it — falling back to the generic
+  // `<img>` path would silently reintroduce the very bug this branch fixes
+  // (a no-intrinsic-size SVG loading tiny and mis-cropping). A non-DOM host
+  // falls through to the generic paths only for parity with prior behaviour.
+  if (blob && isSvgBlob(blob) && typeof document !== 'undefined') {
+    return rasterizeSvgBlob(blob);
   }
 
   if (typeof createImageBitmap === 'function' && blob) {

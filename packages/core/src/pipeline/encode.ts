@@ -5,7 +5,15 @@ import { copyJpegExif } from './exif.js';
 
 const FALLBACK_MIME = 'image/png';
 
-const ALPHA_CARRYING_SOURCE_MIMES = new Set(['image/png', 'image/webp', 'image/avif']);
+// SVG is included: it routinely carries transparency, and once rasterised its
+// canvas has an alpha channel, so `'auto'` must not resolve it to JPEG (which
+// would flatten the background to black).
+const ALPHA_CARRYING_SOURCE_MIMES = new Set([
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/svg+xml',
+]);
 
 export interface EncodeOptions {
   /** Original source URL or filename, if any — used to derive the output name. */

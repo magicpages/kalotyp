@@ -25,7 +25,13 @@
       // to load instantly and free of network flakiness in CI.
       const TEST_IMAGE_DATA_URL =
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=';
-      window.openEditor = () => {
+      // `overrides` lets specs swap the source image (e.g. an SVG) and any
+      // other option; it defaults to the tiny PNG the axe specs rely on.
+      // The last Save's output File is stashed on `window.__lastProcess` so
+      // specs can assert on the actual saved image.
+      window.__lastProcess = null;
+      window.openEditor = (overrides = {}) => {
+        window.__lastProcess = null;
         const editor = window.pintura.openDefaultEditor({
           src: TEST_IMAGE_DATA_URL,
           locale: { labelButtonExport: 'Save and close' },
@@ -33,6 +39,10 @@
           util: 'crop',
           utils: ['crop', 'filter', 'finetune', 'redact', 'annotate', 'trim', 'frame', 'resize'],
           willClose: () => true,
+          ...overrides,
+        });
+        editor.on('process', (result) => {
+          window.__lastProcess = result.dest;
         });
         return editor;
       };

@@ -1,4 +1,10 @@
-import { bakeCanvasToBlob, canEncodeMime, createBakeCanvas } from '../canvas/bake-canvas.js';
+import {
+  bakeCanvasToBlob,
+  canEncodeMime,
+  createBakeCanvas,
+  getBakeContext2D,
+} from '../canvas/bake-canvas.js';
+import { encodeWithWasmCodec, isWasmEncodableMime } from '../canvas/wasm-codec.js';
 import { clampQuality, DEFAULT_OUTPUT_STATE, type OutputState } from '../output/state.js';
 import type { SourceImage } from '../plugins/utility.js';
 import { copyJpegExif } from './exif.js';
@@ -15,6 +21,16 @@ const ALPHA_CARRYING_SOURCE_MIMES = new Set([
   'image/svg+xml',
 ]);
 
+/**
+ * WebP/AVIF are always producible: natively where Canvas 2D supports them,
+ * otherwise via the WASM codec fallback (`wasm-codec.ts`). Only PNG/JPEG
+ * still depend on the runtime's actual Canvas support.
+ */
+async function canProduceMime(mimeType: string): Promise<boolean> {
+  if (isWasmEncodableMime(mimeType)) return true;
+  return canEncodeMime(mimeType);
+}
+
 export interface EncodeOptions {
   /** Original source URL or filename, if any — used to derive the output name. */
   readonly sourceName?: string;
@@ -30,16 +46,32 @@ export interface EncodeOptions {
 
 /**
  * Resolve the concrete output mime from `OutputState` against runtime support.
- * Explicit choices fall back to WebP then PNG; `'auto'` prefers WebP, then
- * JPEG for non-alpha sources, then PNG.
+ * Explicit choices fall back to WebP then PNG; `'auto'` prefers WebP.
+ *
+ * WebP is always producible per `canProduceMime` (native or WASM), so
+ * `'auto'` always resolves to it here — this function can't know in advance
+ * whether a network-dependent WASM fetch will actually succeed. If it
+ * doesn't, `encodeSourceImage` retries with `resolveNativeFallbackMime`
+ * instead of this function pre-committing to a fallback it can't verify.
+ * `source` is kept in the signature for API stability (this is part of the
+ * package's public surface, re-exported from `index.ts`) even though this
+ * implementation no longer needs to inspect it.
  */
-export async function resolveOutputMime(state: OutputState, source: SourceImage): Promise<string> {
+export async function resolveOutputMime(state: OutputState, _source: SourceImage): Promise<string> {
   if (state.mimeChoice !== 'auto') {
-    if (await canEncodeMime(state.mimeChoice)) return state.mimeChoice;
-    if (await canEncodeMime('image/webp')) return 'image/webp';
+    if (await canProduceMime(state.mimeChoice)) return state.mimeChoice;
+    if (await canProduceMime('image/webp')) return 'image/webp';
     return FALLBACK_MIME;
   }
-  if (await canEncodeMime('image/webp')) return 'image/webp';
+  return 'image/webp';
+}
+
+/**
+ * The best format `encodeSourceImage` can produce without the WASM codec —
+ * JPEG for non-alpha sources when natively supported, otherwise PNG. Used
+ * when auto mode's preferred WebP encode fails at the WASM step.
+ */
+async function resolveNativeFallbackMime(source: SourceImage): Promise<string> {
   const sourceHasAlpha = ALPHA_CARRYING_SOURCE_MIMES.has(source.mimeType);
   if (!sourceHasAlpha && (await canEncodeMime('image/jpeg'))) return 'image/jpeg';
   return FALLBACK_MIME;
@@ -66,29 +98,49 @@ export async function encodeSourceImage(
   const outputState = options.output ?? DEFAULT_OUTPUT_STATE;
   const mimeType = await resolveOutputMime(outputState, source);
   const quality = clampQuality(outputState.quality);
-  const name = deriveOutputName(options.sourceName, mimeType);
   const bake = createBakeCanvas(source.width, source.height);
-  if (bake.kind === 'offscreen') {
-    const ctx = bake.canvas.getContext('2d');
-    if (!ctx) throw new Error('2D canvas context is not available');
-    ctx.drawImage(source.bitmap, 0, 0);
+  const ctx = getBakeContext2D(bake);
+  ctx.drawImage(source.bitmap, 0, 0);
+
+  let resolvedMime = mimeType;
+  let baseBlob: Blob;
+  if (isWasmEncodableMime(mimeType) && !(await canEncodeMime(mimeType))) {
+    try {
+      baseBlob = await encodeWithWasmCodec(
+        ctx.getImageData(0, 0, source.width, source.height),
+        mimeType,
+        quality,
+      );
+    } catch (error) {
+      // 'auto' never committed the user to a specific format, so retry with
+      // whatever the browser can encode natively rather than fail the save
+      // outright. An explicit choice (the user picked WebP/AVIF by name) is
+      // not retried — its failure propagates so the user isn't silently
+      // handed a different format than the one they asked for.
+      if (outputState.mimeChoice !== 'auto') throw error;
+      resolvedMime = await resolveNativeFallbackMime(source);
+      baseBlob = await bakeCanvasToBlob(bake, resolvedMime, quality);
+    }
   } else {
-    const ctx = bake.canvas.getContext('2d');
-    if (!ctx) throw new Error('2D canvas context is not available');
-    ctx.drawImage(source.bitmap, 0, 0);
+    baseBlob = await bakeCanvasToBlob(bake, mimeType, quality);
   }
-  const baseBlob = await bakeCanvasToBlob(bake, mimeType, quality);
+
+  const name = deriveOutputName(options.sourceName, resolvedMime);
   // EXIF can only be re-attached on JPEG → JPEG; canvas re-encoding strips
   // unconditionally, so this is the only place metadata can survive.
-  const shouldPreserveMetadata =
+  const sourceBlob = options.sourceBlob;
+  const canPreserveMetadata =
     options.output?.stripMetadata === false &&
-    mimeType === 'image/jpeg' &&
-    source.mimeType === 'image/jpeg' &&
-    options.sourceBlob !== undefined;
-  const blob = shouldPreserveMetadata
-    ? await copyJpegExif({ source: options.sourceBlob as Blob, output: baseBlob })
-    : baseBlob;
-  return new File([blob], name, { type: mimeType });
+    resolvedMime === 'image/jpeg' &&
+    source.mimeType === 'image/jpeg';
+  // `sourceBlob !== undefined` is checked inline (rather than folded into
+  // canPreserveMetadata above) so TypeScript narrows this local straight
+  // through to the copyJpegExif call below, with no cast required.
+  const blob =
+    canPreserveMetadata && sourceBlob !== undefined
+      ? await copyJpegExif({ source: sourceBlob, output: baseBlob })
+      : baseBlob;
+  return new File([blob], name, { type: resolvedMime });
 }
 
 function extensionForMime(mime: string): string {

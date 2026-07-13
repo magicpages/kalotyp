@@ -30,7 +30,7 @@
     "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
+    "@biomejs/biome": "2.5.3",
     "@changesets/cli": "2.31.0",
     "typescript": "6.0.3",
     "unicode-emoji-json": "^0.9.0"

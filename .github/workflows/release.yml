@@ -62,7 +62,7 @@ jobs:
 
       - name: Create Version PR or publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           # `pnpm run …`, not `pnpm version` — the latter is pnpm's built-in
           # version command (it just prints versions) and would never run the

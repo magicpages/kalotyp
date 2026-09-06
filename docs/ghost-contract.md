@@ -8,7 +8,9 @@ Ghost's admin invokes the editor from exactly one component:
 
 `ghost/admin/app/components/koenig-image-editor.js`
 
-The React admin (`apps/admin-x-settings/`) duplicates the same shape for its own integrations panel; the contract below is identical.
+Two more hosts call the same entry point with the same options: the Koenig editor hook (`koenig-lexical/src/hooks/usePinturaEditor.ts`) and, since Ghost 6.x, the React admin hook (`apps/admin/src/hooks/use-pintura-editor.ts`), which backs the tag detail screen and the settings image fields.
+
+The React admin is the one host that differs: it tracks whether the editor is open and tears it down itself, so it needs the teardown surface in [Teardown](#teardown) on top of everything below. The Ember and Koenig hosts never call `destroy()`.
 
 ## Loading the module
 
@@ -40,7 +42,7 @@ editor.on('loaderror', () => { /* ... */ });
 editor.on('process', (result) => { /* ... */ });
 ```
 
-`openDefaultEditor(options)` returns an editor instance with an `on(name, handler)` subscription API and a dismissal flow for the Close button.
+`openDefaultEditor(options)` returns an editor instance with an `on(name, handler)` / `off(name, handler)` subscription API, a `destroy()` teardown method, and a dismissal flow for the Close button.
 
 ## The options object Ghost passes
 
@@ -101,6 +103,7 @@ Ghost subscribes to two events on the returned instance:
 | --- | --- | --- |
 | `loaderror` | (none) | Source image failed to load |
 | `process` | `result` with `result.dest: File` | User clicked the save button |
+| `destroy` | (none) | The editor has torn itself down and left the DOM |
 
 ```js
 editor.on('process', (result) => {
@@ -147,6 +150,32 @@ addCloseHandler() {
 ```
 
 The module is therefore expected to render a button matching the selector `.PinturaModal button[title="Close"]` whose click event bubbles to `window`. `willClose` is then consulted: it returns `true` when `allowClose` was flipped by that click, and `false` otherwise (for example by pressing Escape, programmatic close, click-outside). Returning `false` is the module's signal to keep itself open.
+
+## Teardown
+
+The React admin hook keeps its own `isOpen` state and a reference to the instance, and drives teardown from the host side:
+
+```js
+// apps/admin/src/hooks/use-pintura-editor.ts
+editorRef.current = editor;                 // L116
+editor.on('destroy', () => {                // L127
+  if (editorRef.current === editor) {
+    editorRef.current = null;
+    setIsOpen(false);
+  }
+});
+setIsOpen(true);                            // L133
+// ...
+editor.destroy();                           // L142 — editor disabled while open
+editor?.destroy();                          // L151 — host component unmounted
+```
+
+Two obligations follow, and a module that meets only one of them breaks this host:
+
+1. **`destroy()` must exist on the instance.** The host calls it unconditionally on unmount, on whatever reference it holds. A missing method throws `TypeError: … destroy is not a function` out of a React cleanup effect, which takes down the route.
+2. **The module must emit `destroy` whenever it closes itself.** This is the host's only signal — and Save closes the editor without consulting `willClose` (see [Dismissal](#dismissal)), so a module that emits nothing leaves the host pinned at `isOpen: true` after every save. Anything the host gates on that state (its own save button, reopening the editor) stays stuck.
+
+`destroy()` is not vetoable. `willClose` guards *user* dismissal; a host tearing down on unmount cannot be refused without leaking the modal into the next route. It must also be idempotent — the host calls it on unmount whether or not the editor already closed itself after a save.
 
 ## Class hooks the integration requires
 
@@ -235,3 +264,5 @@ get pinturaJsUrl() {
 ## Source pin
 
 This document was last updated against `TryGhost/Ghost` at commit `e21cd9f91b2b6420efcad2e6183876a2c10006c9` (`ghost-admin` `package.json` version `6.39.0`). Line numbers above are intended as orientation, not exact references.
+
+The [Teardown](#teardown) section was added later, verified against Ghost `6.62.0`: `apps/admin/src/hooks/use-pintura-editor.ts`, introduced with the React tag detail screen in `TryGhost/Ghost#29698`. That screen's `tagDetailsReact` flag sits in `GA_FEATURES` (`ghost/core/core/shared/labs.js`), so it is always on.

@@ -292,6 +292,60 @@ describe('openDefaultEditor (Ghost contract)', () => {
     });
   });
 
+  it('emits destroy once the editor has closed itself after Save', async () => {
+    // The only signal a host tracking open-state gets when Save closes the
+    // editor: Save bypasses willClose, so without this event such a host
+    // stays "open" forever and never re-enables its own save button.
+    const editor = openDefaultEditor({ src: sourceFile, willClose: () => false }, makeStubDeps());
+    const handler = vi.fn();
+    editor.on('destroy', handler);
+
+    await vi.waitFor(() => {
+      const btn = document.querySelector<HTMLButtonElement>('.kalotyp-button-export');
+      expect(btn?.disabled).toBe(false);
+    });
+    document.querySelector<HTMLButtonElement>('.kalotyp-button-export')?.click();
+
+    await vi.waitFor(() => {
+      expect(handler).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('exposes destroy(), which removes the editor from the DOM and emits destroy', () => {
+    const editor = openDefaultEditor({ src: sourceFile }, makeStubDeps());
+    const handler = vi.fn();
+    editor.on('destroy', handler);
+
+    expect(typeof editor.destroy).toBe('function');
+    editor.destroy();
+
+    expect(document.querySelector('.pintura-editor')).toBeNull();
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('does not let willClose veto destroy()', () => {
+    // willClose guards user dismissal. A host calling destroy() on unmount
+    // must not be refusable, or the modal leaks into the next route.
+    const willClose = vi.fn(() => false);
+    const editor = openDefaultEditor({ src: sourceFile, willClose }, makeStubDeps());
+
+    editor.destroy();
+
+    expect(willClose).not.toHaveBeenCalled();
+    expect(document.querySelector('.pintura-editor')).toBeNull();
+  });
+
+  it('treats destroy() after the editor already closed itself as a no-op', () => {
+    const editor = openDefaultEditor({ src: sourceFile, willClose: () => true }, makeStubDeps());
+    const handler = vi.fn();
+    editor.on('destroy', handler);
+    document.querySelector<HTMLButtonElement>('.PinturaModal button[title="Close"]')?.click();
+    expect(handler).toHaveBeenCalledOnce();
+
+    expect(() => editor.destroy()).not.toThrow();
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
   it('passes the cropSelectPresetOptions and filter through to the crop plugin', async () => {
     const createCropPlugin = vi.fn((opts) => ({
       id: 'crop' as const,

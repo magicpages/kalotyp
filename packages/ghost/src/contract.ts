@@ -1,13 +1,15 @@
 /**
  * Type definitions for the Ghost integration contract.
  *
- * Source of truth is the Ghost Ember admin (`koenig-image-editor.js:171-225`)
- * and the Koenig hook (`usePinturaEditor.js:79-134`). See
- * `docs/ghost-contract.md` §3 for every key, the line in Ghost where it's
- * passed, and what Ghost expects it to do.
+ * Source of truth is the Ghost Ember admin (`koenig-image-editor.js:171-225`),
+ * the Koenig hook (`usePinturaEditor.js:79-134`) and the React admin hook
+ * (`apps/admin/src/hooks/use-pintura-editor.ts:116-151`), which is the only
+ * host that tears the editor down itself. See `docs/ghost-contract.md` §3 for
+ * every key, the line in Ghost where it's passed, and what Ghost expects it to
+ * do.
  */
 
-export type EditorEventName = 'process' | 'loaderror';
+export type EditorEventName = 'process' | 'loaderror' | 'destroy';
 
 export interface ProcessEvent {
   /** The edited image. Ghost reads `result.dest` and nothing else (§4.2). */
@@ -19,9 +21,13 @@ export interface LoadErrorEvent {
   cause?: unknown;
 }
 
+/** The editor has torn itself down. Carries no data (see Teardown in the contract doc). */
+export type DestroyEvent = Record<string, never>;
+
 export type EditorEventPayloads = {
   process: ProcessEvent;
   loaderror: LoadErrorEvent;
+  destroy: DestroyEvent;
 };
 
 export type LocaleCallback = (locale: Record<string, string>) => string;
@@ -57,4 +63,15 @@ export interface EditorInstance {
     event: K,
     listener: (payload: EditorEventPayloads[K]) => void,
   ): void;
+  /**
+   * Tear the editor down and remove it from the DOM, emitting `destroy`.
+   * Ghost's React admin calls this when its host component unmounts and when
+   * the editor is disabled while open (see Teardown in the contract doc).
+   * Unlike the close button it is
+   * not vetoable — `willClose` guards user dismissal, and refusing a host's
+   * teardown would leak the modal into the next route. Idempotent: a call
+   * after the editor already closed itself (Save, or the close button) is a
+   * no-op.
+   */
+  destroy(): void;
 }

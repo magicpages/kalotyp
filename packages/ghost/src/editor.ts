@@ -572,6 +572,10 @@ export function openDefaultEditor(
     focusTrap.release();
     shell.destroy();
     host.remove();
+    // Emitted once the editor is fully gone: hosts that track an open state
+    // (Ghost's React admin) reset it here, and it is the only signal they get
+    // when the editor closes itself after Save (contract doc, Teardown).
+    bus.emit('destroy', {});
     bus.clear();
     editorBus.clear();
   }
@@ -589,6 +593,7 @@ export function openDefaultEditor(
     ): void {
       bus.off(event, listener);
     },
+    destroy: cleanup,
   };
 }
 

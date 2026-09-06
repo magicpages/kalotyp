@@ -27,3 +27,11 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # A major bump here lands the tag change without the matching input
+      # renames, which breaks the release job (see the comment on the
+      # changesets/action step in release.yml). Re-pin as part of the
+      # Changesets CLI v3 upgrade, not as a standalone dependency bump.
+      - dependency-name: changesets/action
+        update-types:
+          - version-update:semver-major

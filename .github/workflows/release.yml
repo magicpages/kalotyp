@@ -62,7 +62,12 @@ jobs:
 
       - name: Create Version PR or publish
         id: changesets
-        uses: changesets/action@v2
+        # Pinned to v1 deliberately. changesets/action v2 requires Changesets
+        # CLI v3 and renamed every input (version -> version-script, publish ->
+        # publish-script, commit -> commit-message, title -> pr-title); this repo
+        # is on CLI 2.31.0, so v2 fails the job outright. Move to v2 only as part
+        # of the CLI v3 upgrade, renaming the inputs below in the same change.
+        uses: changesets/action@v1
         with:
           # `pnpm run …`, not `pnpm version` — the latter is pnpm's built-in
           # version command (it just prints versions) and would never run the

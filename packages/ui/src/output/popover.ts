@@ -49,13 +49,17 @@ const FORMAT_CHOICES: ReadonlyArray<FormatChoice> = [
     value: 'image/webp',
     label: 'WebP',
     description: 'Best compression for most images.',
-    requires: ['image/webp'],
+    // Always producible: native Canvas encode where supported, otherwise a
+    // WASM codec fallback (see packages/core/src/canvas/wasm-codec.ts).
+    requires: [],
   },
   {
     value: 'image/avif',
     label: 'AVIF',
     description: 'Smallest size; slower encode.',
-    requires: ['image/avif'],
+    // Always producible: native Canvas encode where supported, otherwise a
+    // WASM codec fallback (see packages/core/src/canvas/wasm-codec.ts).
+    requires: [],
   },
   {
     value: 'image/jpeg',

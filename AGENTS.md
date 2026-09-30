@@ -173,6 +173,24 @@ Non-negotiable for the published bundle:
 CI enforces lint, typecheck, test, build, bundle-size budget, and the axe /
 keyboard-only Playwright projects.
 
+### Sanctioned exception: on-demand WASM codec fallback
+
+`packages/core/src/canvas/wasm-codec.ts` dynamically `import()`s a WebP/AVIF
+WASM encoder from a pinned jsDelivr URL, but only when `canEncodeMime()`
+reports the running browser's Canvas 2D can't *encode* that format natively
+(see `bake-canvas.ts`). This is not a Safari-only gap: no mainstream browser's
+Canvas 2D implements AVIF encoding as of this writing (AVIF *decoding* —
+displaying an existing AVIF — is unrelated and has been broadly supported for
+years), and WebP encoding is missing specifically on Safari. This is
+deliberately not counted against the zero-dependency / bundle-size rules
+above: the package that's fetched is never listed in any `package.json`
+`dependencies`, never statically bundled into `kalotyp.js`/`kalotyp.css`, and
+never downloaded by a runtime that already has native encode support for the
+requested format. It exists solely so every browser can get WebP/AVIF output
+instead of a silent PNG downgrade. If you touch this path, keep it that way —
+no new format should gain a WASM fallback without the same on-demand,
+native-first gating.
+
 ### What "done" looks like
 
 1. Tests cover the change (new behaviour → new tests; bug fixes → regression tests).

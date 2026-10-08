@@ -1,7 +1,11 @@
 /**
- * `'auto'` resolves to the smallest format that preserves alpha on the
- * current runtime (WebP on evergreens, PNG fallback). AVIF never auto-
- * resolves; the user must pick it explicitly.
+ * `'auto'` preserves the source image's own format when the runtime can encode
+ * it (JPEG stays JPEG, PNG stays PNG, and so on) — an edit never silently
+ * changes the image's type. This matters for Ghost, which serves the saved file
+ * into newsletters: re-encoding a JPEG to WebP produces a file that email
+ * clients such as Outlook Classic cannot render. Only a source format the
+ * runtime cannot encode falls back by alpha (JPEG for opaque, PNG otherwise).
+ * WebP and AVIF are opt-in through explicit choices.
  */
 export type OutputMimeChoice = 'auto' | 'image/png' | 'image/jpeg' | 'image/webp' | 'image/avif';
 

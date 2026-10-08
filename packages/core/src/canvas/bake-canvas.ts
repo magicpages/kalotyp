@@ -75,6 +75,10 @@ export function canEncodeMime(mimeType: string): Promise<boolean> {
   const probe = (async () => {
     try {
       const bake = createBakeCanvas(1, 1);
+      // `OffscreenCanvas.convertToBlob` throws `InvalidStateError` when the
+      // canvas has no rendering context (Chromium; whatwg/html#12253), so the
+      // context must be acquired before encoding or every probe reports false.
+      getBakeContext2D(bake);
       const blob = await bakeCanvasToBlob(bake, mimeType, 0.5);
       // `toBlob` will silently fall back to PNG on unsupported types,
       // so verify the result advertises the requested mime.

@@ -15,6 +15,7 @@
       "!**/test-results",
       "!**/.turbo",
       "!**/.claude",
+      "!**/.worktrees",
       "!pnpm-lock.yaml",
       "!**/plugins/annotate/emoji-data.ts"
     ]

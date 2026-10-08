@@ -35,24 +35,46 @@ describe('resolveOutputMime', () => {
     expect(await resolveOutputMime(state, FAKE_SOURCE as SourceImage)).toBe('image/png');
   });
 
-  it('auto resolves to WebP when supported', async () => {
-    stubSupport({ 'image/webp': true, 'image/png': true });
-    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
-    expect(await resolveOutputMime(state, FAKE_SOURCE as SourceImage)).toBe('image/webp');
-  });
-
-  it('auto resolves to JPEG for non-alpha sources when WebP is unavailable', async () => {
-    stubSupport({ 'image/jpeg': true, 'image/png': true });
+  it('auto preserves a JPEG source instead of transcoding it to WebP', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/webp': true, 'image/png': true });
     const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
     const jpegSource = { ...FAKE_SOURCE, mimeType: 'image/jpeg' };
     expect(await resolveOutputMime(state, jpegSource as SourceImage)).toBe('image/jpeg');
   });
 
-  it('auto resolves to PNG for alpha-carrying sources when WebP is unavailable', async () => {
-    stubSupport({ 'image/jpeg': true, 'image/png': true });
+  it('auto preserves a PNG source', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/webp': true, 'image/png': true });
     const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
     const pngSource = { ...FAKE_SOURCE, mimeType: 'image/png' };
     expect(await resolveOutputMime(state, pngSource as SourceImage)).toBe('image/png');
+  });
+
+  it('auto preserves a WebP source when the runtime can encode WebP', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/webp': true, 'image/png': true });
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const webpSource = { ...FAKE_SOURCE, mimeType: 'image/webp' };
+    expect(await resolveOutputMime(state, webpSource as SourceImage)).toBe('image/webp');
+  });
+
+  it('auto falls back to PNG for an alpha-carrying source with no encoder (SVG)', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/png': true });
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const svgSource = { ...FAKE_SOURCE, mimeType: 'image/svg+xml' };
+    expect(await resolveOutputMime(state, svgSource as SourceImage)).toBe('image/png');
+  });
+
+  it('auto falls back to JPEG for an opaque unrecognised source', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/png': true });
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const bmpSource = { ...FAKE_SOURCE, mimeType: 'image/bmp' };
+    expect(await resolveOutputMime(state, bmpSource as SourceImage)).toBe('image/jpeg');
+  });
+
+  it('auto falls back by alpha when the source format itself cannot be encoded', async () => {
+    stubSupport({ 'image/jpeg': true, 'image/png': true });
+    const state: OutputState = { mimeChoice: 'auto', quality: 0.8, stripMetadata: true };
+    const avifSource = { ...FAKE_SOURCE, mimeType: 'image/avif' };
+    expect(await resolveOutputMime(state, avifSource as SourceImage)).toBe('image/png');
   });
 });
 

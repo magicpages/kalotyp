@@ -32,7 +32,7 @@ interface FormatChoice {
 }
 
 const FORMAT_CHOICES: ReadonlyArray<FormatChoice> = [
-  { value: 'auto', label: 'Auto (recommended)' },
+  { value: 'auto', label: 'Auto (keeps original format)' },
   { value: 'image/webp', label: 'WebP' },
   { value: 'image/avif', label: 'AVIF' },
   { value: 'image/jpeg', label: 'JPEG' },

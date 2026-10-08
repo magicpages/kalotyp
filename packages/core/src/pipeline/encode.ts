@@ -5,15 +5,30 @@ import { copyJpegExif } from './exif.js';
 
 const FALLBACK_MIME = 'image/png';
 
-// SVG is included: it routinely carries transparency, and once rasterised its
-// canvas has an alpha channel, so `'auto'` must not resolve it to JPEG (which
-// would flatten the background to black).
-const ALPHA_CARRYING_SOURCE_MIMES = new Set([
-  'image/png',
-  'image/webp',
-  'image/avif',
-  'image/svg+xml',
-]);
+// Source formats Kalotyp can re-encode one-to-one. `'auto'` keeps the source's
+// own format so an edit never silently changes an image's type: Ghost serves
+// the saved file straight into newsletters, and email clients (notably Outlook
+// Classic, whose Word engine renders no WebP/AVIF) cannot decode those formats.
+// A JPEG must stay a JPEG even though WebP would be smaller.
+const SOURCE_FORMAT_BY_MIME: Partial<Record<string, string>> = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/avif': 'image/avif',
+};
+
+// Sources with no canvas encoder (GIF, SVG, BMP, …) and unrecognised formats
+// fall back by alpha. SVG is included because it routinely carries transparency
+// and rasterises onto an alpha canvas; GIF likewise. Resolving those to JPEG
+// would flatten the background to black. WebP/AVIF stay listed for the case
+// where the runtime cannot encode them and they fall through to the fallback.
+const ALPHA_CARRYING_SOURCE_MIMES: Record<string, true> = {
+  'image/png': true,
+  'image/webp': true,
+  'image/avif': true,
+  'image/gif': true,
+  'image/svg+xml': true,
+};
 
 export interface EncodeOptions {
   /** Original source URL or filename, if any — used to derive the output name. */
@@ -30,8 +45,11 @@ export interface EncodeOptions {
 
 /**
  * Resolve the concrete output mime from `OutputState` against runtime support.
- * Explicit choices fall back to WebP then PNG; `'auto'` prefers WebP, then
- * JPEG for non-alpha sources, then PNG.
+ * Explicit choices fall back to WebP then PNG. `'auto'` preserves the source
+ * format when the runtime can encode it (JPEG stays JPEG — never silently
+ * rewritten to WebP, which Ghost would then serve into newsletters that email
+ * clients cannot decode); otherwise it falls back by alpha: JPEG for opaque
+ * sources, PNG otherwise.
  */
 export async function resolveOutputMime(state: OutputState, source: SourceImage): Promise<string> {
   if (state.mimeChoice !== 'auto') {
@@ -39,8 +57,9 @@ export async function resolveOutputMime(state: OutputState, source: SourceImage)
     if (await canEncodeMime('image/webp')) return 'image/webp';
     return FALLBACK_MIME;
   }
-  if (await canEncodeMime('image/webp')) return 'image/webp';
-  const sourceHasAlpha = ALPHA_CARRYING_SOURCE_MIMES.has(source.mimeType);
+  const sourceFormat = SOURCE_FORMAT_BY_MIME[source.mimeType];
+  if (sourceFormat && (await canEncodeMime(sourceFormat))) return sourceFormat;
+  const sourceHasAlpha = ALPHA_CARRYING_SOURCE_MIMES[source.mimeType] === true;
   if (!sourceHasAlpha && (await canEncodeMime('image/jpeg'))) return 'image/jpeg';
   return FALLBACK_MIME;
 }

@@ -42,7 +42,7 @@ const FORMAT_CHOICES: ReadonlyArray<FormatChoice> = [
   {
     value: 'auto',
     label: 'Auto',
-    description: 'WebP when supported, PNG fallback.',
+    description: 'Keeps the image’s original format.',
     requires: [],
   },
   {
@@ -252,7 +252,7 @@ function describeSelection(state: OutputState): string {
   const percent = Math.round(state.quality * 100);
   switch (state.mimeChoice) {
     case 'auto':
-      return `Auto · ${percent}% quality`;
+      return 'Auto · keeps original format';
     case 'image/webp':
       return `WebP · ${percent}% quality`;
     case 'image/avif':
